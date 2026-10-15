@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#374151" />
+  <meta name="description" content="Aplikasi absensi pegawai KPU Kabupaten Aceh Selatan." />
+  <title>Sistem Absensi KPU Kabupaten Aceh Selatan</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./assets/icons/icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Lewati ke konten utama</a>
+
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="app-header__brand">
+        <img class="app-header__mark" src="./assets/icons/icon-192.png"
+             alt="" width="40" height="40" aria-hidden="true" />
+        <div>
+          <h1 class="app-header__title" id="app-name">Sistem Absensi KPU Kabupaten Aceh Selatan</h1>
+          <p class="app-header__subtitle">Fase Autentikasi</p>
+        </div>
+      </div>
+      <span class="badge badge--neutral" id="app-version">versi -</span>
+    </div>
+  </header>
+
+  <main id="main" class="app-main">
+    <section class="notice" role="status" aria-live="polite">
+      <h2 class="notice__title">Tahap pengembangan</h2>
+      <p class="notice__text">
+        Tahap autentikasi tersedia: masuk dengan NIP/NIPK dan PIN. Fitur
+        absensi, kamera, GPS, pengajuan susulan, dan panel admin lengkap
+        <strong>belum tersedia</strong> dan akan dibangun pada tahap berikutnya.
+      </p>
+    </section>
+
+    <section id="login-view" class="auth-panel" aria-labelledby="login-title" hidden>
+      <h2 class="auth-panel__title" id="login-title">Masuk</h2>
+      <form id="login-form" class="auth-form" novalidate>
+        <div class="form-field">
+          <label class="form-label" for="nip">NIP / NIPK</label>
+          <input class="form-input" id="nip" name="nip" type="text"
+                 inputmode="numeric" autocomplete="username" required />
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="pin">PIN</label>
+          <input class="form-input" id="pin" name="pin" type="password"
+                 inputmode="numeric" autocomplete="current-password" required />
+        </div>
+        <button class="btn btn--primary" id="login-submit" type="submit">Masuk</button>
+        <p class="form-message" id="login-message" role="status" aria-live="polite" hidden></p>
+      </form>
+      <p class="auth-panel__hint">
+        Sesi disimpan hanya selama halaman terbuka. Memuat ulang berarti keluar.
+      </p>
+    </section>
+
+    <section id="session-view" class="auth-panel" aria-labelledby="session-title" hidden>
+      <h2 class="auth-panel__title" id="session-title">Sesi aktif</h2>
+      <dl class="session-info">
+        <div class="session-info__row">
+          <dt>Nama</dt>
+          <dd id="session-name">-</dd>
+        </div>
+        <div class="session-info__row">
+          <dt>Peran</dt>
+          <dd id="session-role">-</dd>
+        </div>
+      </dl>
+      <button class="btn" id="logout-btn" type="button">Keluar</button>
+    </section>
+
+    <section class="status-grid" aria-label="Status sistem">
+      <article class="card">
+        <h2 class="card__title">Status aplikasi</h2>
+        <p class="card__row">
+          <span class="dot dot--neutral" aria-hidden="true"></span>
+          <span id="app-status" class="card__value">Fondasi belum terhubung ke backend</span>
+        </p>
+        <p class="card__hint">Frontend statis. Autentikasi NIP/NIPK + PIN tersedia pada tahap ini.</p>
+      </article>
+
+      <article class="card">
+        <h2 class="card__title">Koneksi jaringan</h2>
+        <p class="card__row">
+          <span id="net-dot" class="dot dot--neutral" aria-hidden="true"></span>
+          <span id="net-status" class="card__value">Memeriksa…</span>
+        </p>
+        <p class="card__hint">Absensi hanya dapat dikirim saat perangkat daring.</p>
+      </article>
+
+      <article class="card">
+        <h2 class="card__title">Backend</h2>
+        <p class="card__row">
+          <span id="backend-dot" class="dot dot--neutral" aria-hidden="true"></span>
+          <span id="backend-status" class="card__value">BELUM DIKONFIGURASI</span>
+        </p>
+        <p class="card__hint" id="backend-hint">
+          URL Web App Apps Script belum diisi pada konfigurasi frontend.
+        </p>
+      </article>
+
+      <article class="card">
+        <h2 class="card__title">Versi aplikasi</h2>
+        <p class="card__row">
+          <span id="version-value" class="card__value">-</span>
+        </p>
+        <p class="card__hint">Bersumber dari <code>assets/js/config.js</code>.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>KPU Kabupaten Aceh Selatan &middot; Zona waktu Asia/Jakarta</p>
+  </footer>
+
+  <script src="./assets/js/config.js"></script>
+  <script src="./assets/js/api.js"></script>
+  <script src="./assets/js/app.js"></script>
+  <script src="./assets/js/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+# DEPLOYMENT — Konfigurasi & Deployment
+
+> Status: **PHASE 2 (autentikasi).** Langkah di bawah sesuai berkas di repo.
+> Jangan menaruh nilai rahasia (ID resource, PIN, token) di repositori.
+> Nilai yang belum tersedia ditandai **BELUM DIKONFIGURASI** / **BELUM DITETAPKAN**.
+
+## A. Konfigurasi Publik vs Server
+| Jenis | Contoh | Lokasi | Boleh di Git? |
+|-------|--------|--------|----------------|
+| Publik | Nama aplikasi, versi, URL Web App | `assets/js/config.js` | Ya (URL `/exec` bersifat publik) |
+| Server | `SPREADSHEET_ID`, `DRIVE_FOLDER_ID`, koordinat kantor, radius | Apps Script **Script Properties** | Tidak |
+
+Script Properties **bukan** pengganti autentikasi/otorisasi. Endpoint sensitif
+tetap wajib memverifikasi identitas & peran di backend.
+
+## B. Membuat Google Spreadsheet
+1. Buat Spreadsheet baru milik akun pengelola (jangan bagikan ke publik).
+2. Salin **Spreadsheet ID** (bagian di antara `/d/` dan `/edit` pada URL).
+3. Simpan ID di Script Properties dengan kunci `SPREADSHEET_ID`.
+4. **Jangan** menaruh ID di kode frontend atau di repo.
+5. Buat sheet & header dengan menjalankan `initializeSheets()` dari editor Apps
+   Script (PHASE 2: `Pegawai`, `Akun`, `Sesi`, `LogAktivitas`). Sheet phase
+   lanjutan menyusul sesuai `docs/DATA_DICTIONARY.md`.
+
+## C. Menyiapkan Google Drive Privat
+1. Buat folder, misalnya `ABSENSI_KPU` (milik akun pengelola).
+2. **Jangan** mengubah izin menjadi "Siapa pun yang memiliki tautan".
+3. Salin **Folder ID** (bagian `folders/<ID>` pada URL).
+4. Simpan di Script Properties dengan kunci `DRIVE_FOLDER_ID`.
+5. Struktur sub-folder `YYYY/MM/Foto_Masuk|Foto_Pulang` dibuat oleh backend pada
+   PHASE 3 (belum dibuat sekarang).
+6. Cara menghindari tautan publik: jangan panggil `setSharing(...ANYONE...)`;
+   akses foto hanya melalui backend ber-otorisasi; jangan menyalin `webViewLink`
+   ke antarmuka publik.
+
+## D. Menyiapkan Apps Script
+1. Buat proyek Apps Script baru.
+2. Salin isi `gas/` (`Code.gs`, `Config.gs`, `Auth.gs`, `Repo.gs`,
+   `AuthService.gs`, `Bootstrap.gs`, `appsscript.json`).
+   - Aktifkan manifest lewat **Project Settings → Show "appsscript.json"**.
+3. Set **Project Settings → Time zone** = `Asia/Jakarta`.
+4. Isi **Script Properties** (kolom Name/Value):
+   | Kunci | Nilai |
+   |-------|-------|
+   | `SPREADSHEET_ID` | **BELUM DIKONFIGURASI** (AMB-23 / DEC-P08) |
+   | `DRIVE_FOLDER_ID` | **BELUM DIKONFIGURASI** (AMB-23) |
+   | `OFFICE_LATITUDE` | **BELUM DITETAPKAN** (AMB-07) |
+   | `OFFICE_LONGITUDE` | **BELUM DITETAPKAN** (AMB-07) |
+   | `OFFICE_RADIUS_METERS` | `50` (DEC-004) |
+   | `PIN_KDF_ITERATIONS` | Opsional (default 10000 — **WAJIB benchmark**, D2) |
+   | `SESSION_TTL_MINUTES` | Opsional (default 480) |
+   | `ADMIN_SETUP_NIP` | Ya untuk bootstrap (D4) — hapus setelah seed |
+   | `ADMIN_SETUP_PIN` | Ya untuk bootstrap (D4) — hapus setelah seed |
+   | `ADMIN_SETUP_NAMA` | Opsional (D4) |
+5. **Akses Web App** (keputusan D8): *Execute as* = **Me**,
+   *Who has access* = **Anyone**. Nilai ini ada di `appsscript.json` blok `webapp`.
+6. Jalankan `initializeSheets()` lalu `seedAdmin()` (lihat `gas/README.md`).
+   Hapus `ADMIN_SETUP_PIN` setelah berhasil.
+7. Deploy sebagai Web app → salin URL `/exec`.
+8. Salin URL `/exec` ke `assets/js/config.js` → `API_BASE_URL` (publik, bukan rahasia).
+
+## E. Menguji Akses Resource (setelah dikonfigurasi)
+1. Buka `https://script.google.com/macros/s/<ID>/exec?action=health`.
+2. Respons yang benar: JSON dengan `"ok": true` dan `"backendConfigured": true`.
+3. Bila `backendConfigured: false`, properti `SPREADSHEET_ID`/`DRIVE_FOLDER_ID`
+   belum diisi.
+4. Uji login dengan akun admin hasil `seedAdmin()`.
+   **Belum dijalankan** (menunggu `SPREADSHEET_ID`, DEC-P08).
+
+## F. Deploy Frontend ke GitHub Pages
+1. Push repositori (tanpa berkas rahasia; lihat `.gitignore`).
+2. Settings → Pages → Deploy from branch → pilih branch & folder root `/`.
+3. Seluruh path aset memakai referensi relatif (`./...`) sehingga kompatibel
+   dengan sub-path repositori (`https://<user>.github.io/<repo>/`).
+4. Verifikasi URL halaman `.html` termuat dan service worker terdaftar.
+   **Belum diuji di GitHub Pages sebenarnya** (lihat laporan PHASE 1).
+
+## G. Memisahkan Lingkungan Uji dan Produksi
+- Gunakan Spreadsheet, folder Drive, dan proyek Apps Script **terpisah** untuk uji
+  dan produksi; masing-masing punya Script Properties sendiri.
+- Frontend uji dapat berupa branch/URL Pages terpisah; `API_BASE_URL` diarahkan
+  ke Web App uji.
+- Data pegawai produksi tidak boleh dimasukkan ke lingkungan uji; gunakan data
+  sintetis berlabel `TEST` (AMB-29).
+
+## H. Regenerasi Ikon
+```
+node tools/generate-icons.mjs
+```
+Ikon yang dihasilkan adalah **placeholder netral**, bukan logo resmi.
+
+## I. Pemulihan (rancangan; detail AMB-30)
+- Backup Spreadsheet & Drive: **BELUM DITETAPKAN**.
+- Rollback deployment: **BELUM DITETAPKAN**.
+- Kepemilikan akun Google pengelola: **BELUM DITETAPKAN**.

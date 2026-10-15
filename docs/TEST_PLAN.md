@@ -1,0 +1,113 @@
+# TEST PLAN — Rencana Pengujian
+
+> Status: **PHASE 1 & pengujian otomatis PHASE 2 sebagian dieksekusi.** Rencana +
+> hasil apa adanya (lulus/gagal/tidak dijalankan). Pengujian otomatis berjalan di
+> Node dengan stub; integrasi runtime Apps Script & browser BELUM dijalankan.
+
+## Strategi
+- Unit test logika murni (perhitungan jarak, evaluasi jam, validasi input) bila memungkinkan di JS.
+- Test integrasi manual terhadap Apps Script Web App (endpoint backend).
+- Test end-to-end manual di browser desktop & seluler.
+- Test batas (boundary) untuk semua aturan waktu & radius.
+
+## 0. Fondasi (PHASE 1) — otomatis
+Dijalankan dengan `node tests/check-foundation.mjs`.
+
+| ID | Kasus | Hasil |
+|----|-------|-------|
+| FD-01 | Struktur berkas lengkap | LULUS |
+| FD-02 | Sintaks JS frontend (`config.js`, `api.js`, `app.js`, `auth.js`, `service-worker.js`) | LULUS |
+| FD-03 | Sintaks Apps Script (`Code.gs`, `Config.gs`, `Auth.gs`, `Repo.gs`, `AuthService.gs`, `Bootstrap.gs`) | LULUS |
+| FD-04 | Validitas JSON (`manifest.webmanifest`, `appsscript.json`) | LULUS |
+| FD-05 | Ikon PNG valid & berdimensi 192/512 | LULUS |
+| FD-06 | Ikon manifest ada di disk; `start_url`/`scope` relatif | LULUS |
+| FD-07 | Semua referensi aset lokal `index.html` ada | LULUS |
+| FD-08 | Tidak ada rahasia di berkas frontend | LULUS |
+| FD-09 | `API_BASE_URL` masih kosong (tidak klaim terhubung) | LULUS |
+| FD-10 | Tidak ada data mirip NIP/pegawai di frontend | LULUS |
+| FD-11 | Halaman & seluruh aset termuat via HTTP lokal (200) | LULUS |
+| FD-12 | Perilaku service worker online/offline di browser | BELUM DIJALANKAN |
+| FD-13 | Responsivitas visual di berbagai ukuran layar | BELUM DIJALANKAN |
+| FD-14 | Integrasi backend (`action=health`) | BELUM DIJALANKAN |
+| FD-15 | Instalabilitas PWA | BELUM DIJALANKAN |
+| FD-16 | Pengujian autentikasi otomatis (`tests/auth.test.mjs`, 42 cek) | LULUS |
+| FD-17 | Vektor PBKDF2-HMAC-SHA256 RFC 7914 §11 (c=1, c=80000) | LULUS |
+| FD-18 | Benchmark iterasi PBKDF2 di runtime Apps Script nyata | BELUM DIJALANKAN |
+
+## 1. Aturan Waktu (zona `Asia/Jakarta`)
+| ID | Kasus | Ekspektasi |
+|----|-------|------------|
+| WT-01 | Masuk 07:00:00 | Diterima |
+| WT-02 | Masuk 08:29:59 | Diterima |
+| WT-03 | Masuk 08:30:00 | Ditolak |
+| WT-04 | Masuk 06:59:59 | Ditolak |
+| WT-05 | Pulang 16:00:00 | Diterima |
+| WT-06 | Pulang 23:59:59 | Diterima |
+| WT-07 | Pulang 00:00:01 hari berikutnya (untuk tanggal sebelumnya) | Ditolak sebagai reguler |
+| WT-08 | Waktu server dijadikan acuan (jam perangkat dimanipulasi) | Keputusan tetap sesuai server |
+
+## 2. Radius & GPS (WFO masuk)
+| ID | Kasus | Ekspektasi |
+|----|-------|------------|
+| GP-01 | Jarak 49,9 m | Diterima |
+| GP-02 | Jarak 50,0 m | Sesuai keputusan batas (≤ 50) — perlu ketegasan inklusif/eksklusif |
+| GP-03 | Jarak 50,1 m | Ditolak |
+| GP-04 | Koordinat tidak valid (NaN/out-of-range) | Ditolak eksplisit |
+| GP-05 | Izin GPS ditolak | Absensi reguler tidak dicatat berhasil |
+| GP-06 | Akurasi GPS buruk | Perlu keputusan (AMB-08) |
+
+## 3. Foto & Kamera
+| ID | Kasus | Ekspektasi |
+|----|-------|------------|
+| PH-01 | Unggah dari galeri | Ditolak untuk alur reguler |
+| PH-02 | Izin kamera ditolak | Absensi reguler tidak berhasil |
+| PH-03 | Foto berhasil, simpan Drive gagal | Status bukan "berhasil" |
+| PH-04 | Foto disimpan, metadata gagal | Status "perlu ditindaklanjuti" + tidak ada tautan publik |
+
+## 4. Autentikasi & Otorisasi (PHASE 2)
+Kode autentikasi tersedia (`gas/Auth.gs`, `gs/AuthService.gs`, dll.). Kasus di bawah
+diuji otomatis di Node dengan stub (`tests/auth.test.mjs`) — BUKAN runtime Apps Script.
+| ID | Kasus | Ekspektasi | Hasil |
+|----|-------|------------|-------|
+| AU-01 | Login PIN valid | Token diterbitkan | LULUS (otomatis) |
+| AU-02 | PIN salah berulang | Lockout sesuai D3 | LULUS (otomatis; 5×) |
+| AU-03 | Login akun nonaktif | Ditolak | LULUS (otomatis) |
+| AU-04 | Login tanpa NIP/PIN | Ditolak | LULUS (otomatis) |
+| AU-05 | Sesi kedaluwarsa / dicabut | Ditolak | LULUS sebagian (dicabut; kedaluwarsa via unit `isSessionValid_`) |
+| AU-06 | Logout | Sesi dicabut di server | LULUS (otomatis) |
+| AU-07 | Pegawai akses endpoint admin | Ditolak | LULUS (otomatis, FORBIDDEN) |
+| AU-08 | Pemalsuan `role` di body | Diabaikan; peran dari server | LULUS (otomatis) |
+| AU-09 | Manipulasi `id_pegawai` | Ditolak | LULUS (otomatis, NOT_FOUND) |
+| AU-10 | Buat akun duplikat | Ditolak | LULUS (otomatis, DUPLICATE) |
+| AU-11 | Reset PIN tanpa otorisasi | Ditolak | LULUS (otomatis, NOT_AVAILABLE) |
+| AU-12 | PIN/token mentah di log | Tidak ada | LULUS (otomatis) |
+| AU-13 | Permintaan bersamaan (lockout/status) | Konsisten (`LockService`) | BELUM DIJALANKAN (butuh runtime) |
+| AU-14 | Kegagalan penyimpanan | Respons gagal, bukan sukses | BELUM DIJALANKAN |
+| AU-15 | Pesan login seragam (akun tak ada vs PIN salah) | Identik | LULUS (otomatis) |
+| AU-16 | Token hanya diterima dari body POST (bukan query) | Query diabaikan | LULUS sebagian (desain; belum uji runtime HTTP) |
+
+## 5. Transaksi & Konkurensi
+| ID | Kasus | Ekspektasi |
+|----|-------|------------|
+| TX-01 | Dua absen masuk pada tanggal sama | Yang kedua ditolak |
+| TX-02 | Absen pulang tanpa masuk valid | Ditolak |
+| TX-03 | Dua request masuk bersamaan | Hanya satu tercatat |
+| TX-04 | Klik ganda | Tidak menghasilkan duplikat |
+
+## 6. PWA & Privasi
+| ID | Kasus | Ekspektasi |
+|----|-------|------------|
+| PW-01 | Offline | Tampilkan absensi tidak dapat dikirim; tidak ada antrean diam-diam |
+| PW-02 | Cache service worker | Tidak memuat data privat/sesi/foto |
+| PW-03 | Tautan file Drive diakses tanpa izin | Gagal (privat) |
+
+## 7. Yang BELUM Diuji
+- Kasus fungsional absensi (WT/GP/PH/TX): **belum dijalankan** (fitur belum ada).
+- Kasus autentikasi AU-13/AU-14 dan integrasi runtime Apps Script (FD-14, FD-18).
+- Pengujian autentikasi E2E di browser (form masuk, sesi di memori, offline).
+- Kasus PWA (PW-01..03).
+- Perilaku service worker online/offline di browser nyata (FD-12).
+- Responsivitas visual (FD-13), integrasi backend (FD-14), instalabilitas PWA (FD-15).
+- Pengujian beban/kuota Apps Script (AMB-24).
+- Pengujian pemulihan bencana (AMB-30).
+- Pengujian keamanan/penetrasi independen.

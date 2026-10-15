@@ -1,0 +1,143 @@
+/*
+ * Autentikasi antarmuka — Sistem Absensi KPU Kabupaten Aceh Selatan (PHASE 2).
+ *
+ * - Login: NIP/NIPK + PIN (keputusan D0).
+ * - Sesi hanya di memori: memuat ulang halaman berarti keluar (keputusan D1).
+ * - Otorisasi sebenarnya ada di backend; UI ini hanya membantu, bukan pengaman.
+ */
+(function () {
+  'use strict';
+
+  var api = window.AppApi;
+
+  // Info pengguna aktif: hanya di memori.
+  var current = null;
+
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  function setText(id, text) {
+    var node = el(id);
+    if (node) {
+      node.textContent = text;
+    }
+  }
+
+  function show(node) {
+    if (node) {
+      node.hidden = false;
+    }
+  }
+
+  function hide(node) {
+    if (node) {
+      node.hidden = true;
+    }
+  }
+
+  function setMessage(id, text, kind) {
+    var node = el(id);
+    if (!node) {
+      return;
+    }
+    node.textContent = text || '';
+    node.className = 'form-message' + (kind ? ' form-message--' + kind : '');
+    node.hidden = !text;
+  }
+
+  function renderLoggedOut() {
+    current = null;
+    show(el('login-view'));
+    hide(el('session-view'));
+    setMessage('login-message', '', '');
+  }
+
+  function renderLoggedIn(user) {
+    current = user;
+    hide(el('login-view'));
+    show(el('session-view'));
+    setText('session-name', user.nama || '-');
+    setText('session-role', user.peran === 'admin' ? 'Administrator' : 'Pegawai');
+    setMessage('login-message', '', '');
+  }
+
+  function onSubmit(event) {
+    event.preventDefault();
+
+    var nipEl = el('nip');
+    var pinEl = el('pin');
+    var submitBtn = el('login-submit');
+
+    var nip = nipEl ? nipEl.value.trim() : '';
+    var pin = pinEl ? pinEl.value : '';
+    // Jangan simpan PIN: kosongkan kolom segera setelah dibaca.
+    if (pinEl) {
+      pinEl.value = '';
+    }
+
+    if (!nip || !pin) {
+      setMessage('login-message', 'NIP dan PIN wajib diisi.', 'error');
+      return;
+    }
+
+    if (!api || !api.hasBackend()) {
+      setMessage('login-message', 'Backend belum dikonfigurasi.', 'error');
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+    }
+    setMessage('login-message', 'Memproses…', 'info');
+
+    api.call('login', { nip: nip, pin: pin, agen: navigator.userAgent })
+      .then(function (res) {
+        if (res && res.ok && res.token) {
+          api.setToken(res.token);
+          renderLoggedIn({ nama: res.nama, peran: res.peran });
+        } else {
+          setMessage('login-message',
+            (res && res.message) || 'NIP atau PIN tidak sesuai.', 'error');
+        }
+      })
+      .catch(function () {
+        setMessage('login-message', 'Tidak dapat menghubungi server.', 'error');
+      })
+      .then(function () {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+        }
+      });
+  }
+
+  function onLogout() {
+    api.call('logout', {}).catch(function () {
+      // Tetap bersihkan sesi lokal walau permintaan gagal.
+    }).then(function () {
+      api.clearToken();
+      renderLoggedOut();
+    });
+  }
+
+  function init() {
+    if (!api) {
+      return;
+    }
+    var form = el('login-form');
+    if (form) {
+      form.addEventListener('submit', onSubmit);
+    }
+    var logoutBtn = el('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', onLogout);
+    }
+    renderLoggedOut();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
