@@ -1,10 +1,11 @@
 /**
- * Repo.gs — akses Google Sheets untuk autentikasi.
- * PHASE 2. Skema mengikuti docs/DATA_DICTIONARY.md (disetujui).
+ * Repo.gs — akses Google Sheets untuk autentikasi & absensi.
+ * PHASE 2–3. Skema mengikuti docs/DATA_DICTIONARY.md (disetujui).
  *
  * Catatan: Google Sheets bukan database transaksional penuh. Operasi tulis
  * dibungkus LockService untuk mengurangi race condition. ID internal stabil
- * (bukan nomor baris). Waktu disimpan ISO-8601 UTC.
+ * (bukan nomor baris). Waktu disimpan ISO-8601 UTC; kolom `tanggal` memuat
+ * tanggal bisnis lokal Asia/Jakarta (YYYY-MM-DD).
  */
 
 var SHEET_HEADERS = Object.freeze({
@@ -14,11 +15,19 @@ var SHEET_HEADERS = Object.freeze({
     'peran', 'status_aktif', 'gagal_login', 'terkunci_sampai', 'diubah_pada', 'diubah_oleh'],
   Sesi: ['id_sesi', 'id_akun', 'token_hash', 'dibuat_pada', 'kedaluwarsa_pada',
     'dicabut_pada', 'agen'],
+  Absensi: ['id_absensi', 'id_pegawai', 'tanggal', 'jenis', 'mode_kerja', 'waktu_server',
+    'lintang', 'bujur', 'akurasi', 'jarak_meter', 'sumber', 'id_bukti',
+    'dibuat_pada', 'diubah_pada', 'diubah_oleh'],
+  BuktiAbsensi: ['id_bukti', 'id_absensi', 'drive_file_id', 'path', 'mime', 'ukuran',
+    'dibuat_pada'],
+  PengajuanSusulan: ['id_pengajuan', 'id_pegawai', 'tanggal_absensi', 'jenis', 'mode_kerja',
+    'waktu_diklaim', 'waktu_pengajuan_server', 'alasan', 'bukti_file_id', 'status',
+    'id_admin', 'waktu_keputusan', 'catatan_keputusan', 'diubah_pada'],
   LogAktivitas: ['id_log', 'waktu', 'id_aktor', 'peran_aktor', 'aksi', 'target', 'detail']
 });
 
-/** Sheet yang boleh dibuat pada PHASE 2 (bukan Absensi/Bukti/HariLibur/Susulan). */
-var PHASE2_SHEET_NAMES = ['Pegawai', 'Akun', 'Sesi', 'LogAktivitas'];
+/** Semua sheet yang dibuat initializeSheets() (PHASE 2 + PHASE 3). */
+var ALL_SHEET_NAMES = Object.freeze(Object.keys(SHEET_HEADERS));
 
 function getSpreadsheet_() {
   var id = getServerConfig_().SPREADSHEET_ID;
@@ -39,7 +48,7 @@ function getSheet_(name) {
 /** Membuat sheet + header bila belum ada. */
 function ensureAllSheets_() {
   var ss = getSpreadsheet_();
-  PHASE2_SHEET_NAMES.forEach(function (name) {
+  ALL_SHEET_NAMES.forEach(function (name) {
     var sh = ss.getSheetByName(name);
     if (!sh) {
       sh = ss.insertSheet(name);
@@ -150,6 +159,36 @@ function findSesiByTokenHash_(tokenHash) {
   var rows = readObjects_('Sesi');
   for (var i = 0; i < rows.length; i++) {
     if (String(rows[i].token_hash) === String(tokenHash)) return rows[i];
+  }
+  return null;
+}
+
+function findAbsensiById_(id) {
+  var rows = readObjects_('Absensi');
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i].id_absensi) === String(id)) return rows[i];
+  }
+  return null;
+}
+
+/** Mencari absensi berdasar (pegawai, tanggal bisnis, jenis) — kunci duplikasi. */
+function findAbsensiByUniq_(idPegawai, tanggal, jenis) {
+  var rows = readObjects_('Absensi');
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i].id_pegawai) === String(idPegawai) &&
+        String(rows[i].tanggal) === String(tanggal) &&
+        String(rows[i].jenis) === String(jenis)) {
+      return rows[i];
+    }
+  }
+  return null;
+}
+
+/** Mencari pengajuan susulan berdasar ID. */
+function findPengajuanById_(id) {
+  var rows = readObjects_('PengajuanSusulan');
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i].id_pengajuan) === String(id)) return rows[i];
   }
   return null;
 }

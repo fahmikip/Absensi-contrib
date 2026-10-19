@@ -23,7 +23,7 @@ Dijalankan dengan `node tests/check-foundation.mjs`.
 | FD-06 | Ikon manifest ada di disk; `start_url`/`scope` relatif | LULUS |
 | FD-07 | Semua referensi aset lokal `index.html` ada | LULUS |
 | FD-08 | Tidak ada rahasia di berkas frontend | LULUS |
-| FD-09 | `API_BASE_URL` masih kosong (tidak klaim terhubung) | LULUS |
+| FD-09 | `API_BASE_URL` masih kosong (tidak klaim terhubung) | **GAGAL** (2026-10-19: URL terisi; pre-existing, keputusan ditunggu — lihat PROGRESS PHASE 4 "Temuan") |
 | FD-10 | Tidak ada data mirip NIP/pegawai di frontend | LULUS |
 | FD-11 | Halaman & seluruh aset termuat via HTTP lokal (200) | LULUS |
 | FD-12 | Perilaku service worker online/offline di browser | BELUM DIJALANKAN |
@@ -33,6 +33,8 @@ Dijalankan dengan `node tests/check-foundation.mjs`.
 | FD-16 | Pengujian autentikasi otomatis (`tests/auth.test.mjs`, 42 cek) | LULUS |
 | FD-17 | Vektor PBKDF2-HMAC-SHA256 RFC 7914 §11 (c=1, c=80000) | LULUS |
 | FD-18 | Benchmark iterasi PBKDF2 di runtime Apps Script nyata | BELUM DIJALANKAN |
+| FD-19 | Pengujian mesin absensi (`tests/attendance.test.mjs`, 112 cek) | LULUS |
+| FD-20 | Pengujian panel admin (`tests/admin.test.mjs`, 156 cek) | LULUS |
 
 ## 1. Aturan Waktu (zona `Asia/Jakarta`)
 | ID | Kasus | Ekspektasi |
@@ -101,9 +103,36 @@ diuji otomatis di Node dengan stub (`tests/auth.test.mjs`) — BUKAN runtime App
 | PW-02 | Cache service worker | Tidak memuat data privat/sesi/foto |
 | PW-03 | Tautan file Drive diakses tanpa izin | Gagal (privat) |
 
-## 7. Yang BELUM Diuji
-- Kasus fungsional absensi (WT/GP/PH/TX): **belum dijalankan** (fitur belum ada).
-- Kasus autentikasi AU-13/AU-14 dan integrasi runtime Apps Script (FD-14, FD-18).
+## 7. Panel Admin (PHASE 4) — otomatis
+Dijalankan dengan `node tests/admin.test.mjs` (156 cek) — Node + stub,
+BUKAN runtime Apps Script. Data uji sintetis berlabel `TEST`.
+| ID | Kasus | Hasil |
+|----|-------|-------|
+| AD-01 | 11 endpoint admin tanpa token → `UNAUTHORIZED` | LULUS (otomatis) |
+| AD-02 | 11 endpoint admin dengan token pegawai → `FORBIDDEN` | LULUS (otomatis) |
+| AD-03 | Peran palsu di body diabaikan (peran dari sesi server) | LULUS (otomatis) |
+| AD-04 | Metode GET endpoint admin → `METHOD_NOT_ALLOWED` | LULUS (otomatis) |
+| AD-05 | Daftar pegawai: filter status/q/limit; tanpa `pin_hash`/`pin_salt`/URL | LULUS (otomatis) |
+| AD-06 | Detail pegawai: kolom DATA_DICTIONARY §1 + info akun tanpa rahasia | LULUS (otomatis) |
+| AD-07 | Tambah pegawai: validasi, NIP duplikat → `DUPLICATE`, metadata admin, log | LULUS (otomatis) |
+| AD-08 | Edit pegawai: nama/NIP/jabatan/unit; NIP bentrok → `DUPLICATE`; log | LULUS (otomatis) |
+| AD-09 | Aktif/nonaktif pegawai: sesi dicabut, login ditolak, riwayat absensi tetap | LULUS (otomatis) |
+| AD-10 | Daftar absensi: filter tanggal/jenis/pegawai; join nama; **tanpa `drive_file_id`/URL** | LULUS (otomatis) |
+| AD-11 | Detail absensi: metadata bukti (ada/mime/ukuran/path) tanpa referensi foto | LULUS (otomatis) |
+| AD-12 | Daftar/detail pengajuan susulan + filter status | LULUS (otomatis) |
+| AD-13 | Setujui/tolak: status, `id_admin`, `waktu_keputusan` server, log | LULUS (otomatis) |
+| AD-14 | Keputusan ganda → `CONFLICT` | LULUS (otomatis) |
+| AD-15 | Keputusan susulan TIDAK menulis baris Absensi (belum ada aturan) | LULUS (otomatis) |
+| AD-16 | Log audit: filter, limit, tanpa token/PIN mentah | LULUS (otomatis) |
+| AD-17 | Router/doPost JSON endpoint admin; `health.phase='admin'`; header `PengajuanSusulan` | LULUS (otomatis) |
+| AD-18 | UI panel admin di browser (form, tab, visibilitas peran) | BELUM DIJALANKAN |
+| AD-19 | Otorisasi admin terhadap Web App nyata (runtime Apps Script) | BELUM DIJALANKAN |
+
+## 8. Yang BELUM Diuji
+- Kasus panel admin AD-18/AD-19 (browser & runtime) — baru otomatis Node.
+- Kasus fungsional absensi (WT/GP/PH/TX) dijalankan otomatis via
+  `tests/attendance.test.mjs` (112 cek) tetapi **belum** diuji di runtime &
+  browser nyata; kasus AU-13/AU-14 dan integrasi runtime (FD-14, FD-18) belum.
 - Pengujian autentikasi E2E di browser (form masuk, sesi di memori, offline).
 - Kasus PWA (PW-01..03).
 - Perilaku service worker online/offline di browser nyata (FD-12).

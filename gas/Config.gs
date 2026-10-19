@@ -17,6 +17,7 @@ var PROPERTY_KEYS = Object.freeze({
   OFFICE_LATITUDE: 'OFFICE_LATITUDE',     // AMB-07 (belum ditetapkan)
   OFFICE_LONGITUDE: 'OFFICE_LONGITUDE',   // AMB-07 (belum ditetapkan)
   OFFICE_RADIUS_METERS: 'OFFICE_RADIUS_METERS', // 50 (DEC-004), dapat dikonfigurasi
+  PHASE3_PHOTO_MAX_BYTES: 'PHASE3_PHOTO_MAX_BYTES', // 1000000 (DEC-P17), dapat dikonfigurasi
   PIN_KDF_ITERATIONS: 'PIN_KDF_ITERATIONS', // D2 (opsional; benchmark sebelum produksi)
   SESSION_TTL_MINUTES: 'SESSION_TTL_MINUTES', // D1 (opsional; default 480)
   ADMIN_SETUP_NIP: 'ADMIN_SETUP_NIP',       // D4 (seed admin; rahasia, jangan di frontend)
@@ -103,4 +104,17 @@ function sessionTtlMs_() {
  */
 function lockPolicy_() {
   return { maxFailures: LOCK_MAX_FAILURES, lockMs: LOCK_DURATION_MS };
+}
+
+/** Batas ukuran foto default (DEC-P17): 1.000.000 byte. */
+var PHOTO_MAX_BYTES_DEFAULT = 1000000;
+
+/**
+ * Batas ukuran foto (byte) dari Script Properties; default 1.000.000 (DEC-P17).
+ * @return {number}
+ */
+function photoMaxBytes_() {
+  var raw = getServerConfig_().PHASE3_PHOTO_MAX_BYTES;
+  var n = parseInt(raw, 10);
+  return (isFinite(n) && n > 0) ? n : PHOTO_MAX_BYTES_DEFAULT;
 }

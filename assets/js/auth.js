@@ -51,6 +51,7 @@
     show(el('login-view'));
     hide(el('session-view'));
     setMessage('login-message', '', '');
+    document.dispatchEvent(new CustomEvent('auth:logout'));
   }
 
   function renderLoggedIn(user) {
@@ -60,6 +61,7 @@
     setText('session-name', user.nama || '-');
     setText('session-role', user.peran === 'admin' ? 'Administrator' : 'Pegawai');
     setMessage('login-message', '', '');
+    document.dispatchEvent(new CustomEvent('auth:login', { detail: { nama: user.nama, peran: user.peran } }));
   }
 
   function onSubmit(event) {

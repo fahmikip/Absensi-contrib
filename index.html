@@ -21,7 +21,7 @@
              alt="" width="40" height="40" aria-hidden="true" />
         <div>
           <h1 class="app-header__title" id="app-name">Sistem Absensi KPU Kabupaten Aceh Selatan</h1>
-          <p class="app-header__subtitle">Fase Autentikasi</p>
+          <p class="app-header__subtitle">Fase Panel Admin</p>
         </div>
       </div>
       <span class="badge badge--neutral" id="app-version">versi -</span>
@@ -32,9 +32,13 @@
     <section class="notice" role="status" aria-live="polite">
       <h2 class="notice__title">Tahap pengembangan</h2>
       <p class="notice__text">
-        Tahap autentikasi tersedia: masuk dengan NIP/NIPK dan PIN. Fitur
-        absensi, kamera, GPS, pengajuan susulan, dan panel admin lengkap
-        <strong>belum tersedia</strong> dan akan dibangun pada tahap berikutnya.
+        Tahap panel admin tersedia: masuk dengan NIP/NIPK dan PIN, lalu absen
+        masuk/pulang (WFO atau WFH/WFA) dengan foto kamera; GPS diwajibkan
+        untuk masuk WFO. Administrator dapat mengelola pegawai, melihat data
+        absensi, memutuskan pengajuan susulan, dan meninjau log audit.
+        Fitur pengajuan susulan oleh pegawai dan laporan <strong>belum
+        tersedia</strong>. Validasi GPS menunggu penetapan koordinat kantor
+        (belum dikonfigurasi).
       </p>
     </section>
 
@@ -74,6 +78,229 @@
       <button class="btn" id="logout-btn" type="button">Keluar</button>
     </section>
 
+    <section id="attendance-view" class="att-panel" aria-labelledby="att-title" hidden>
+      <h2 class="att-panel__title" id="att-title">Absensi</h2>
+
+      <div id="att-step-select" class="att-step">
+        <fieldset class="att-fieldset">
+          <legend class="form-label">Jenis absensi</legend>
+          <label class="att-choice">
+            <input type="radio" name="att-jenis" value="masuk" checked />
+            <span>Masuk</span>
+          </label>
+          <label class="att-choice">
+            <input type="radio" name="att-jenis" value="pulang" />
+            <span>Pulang</span>
+          </label>
+        </fieldset>
+
+        <fieldset class="att-fieldset">
+          <legend class="form-label">Mode kerja</legend>
+          <label class="att-choice">
+            <input type="radio" name="att-mode" value="WFO" checked />
+            <span>WFO (wajib GPS)</span>
+          </label>
+          <label class="att-choice">
+            <input type="radio" name="att-mode" value="WFH_WFA" />
+            <span>WFH/WFA (tanpa GPS)</span>
+          </label>
+        </fieldset>
+
+        <p class="card__hint" id="att-time-hint"></p>
+        <p class="card__hint">
+          Foto diambil melalui kamera perangkat (tanpa unggahan galeri, tanpa watermark).
+        </p>
+        <button class="btn btn--primary" id="att-open-camera" type="button">Buka kamera</button>
+      </div>
+
+      <div id="att-step-camera" class="att-step" hidden>
+        <video id="att-video" class="att-video" playsinline muted autoplay></video>
+        <img id="att-photo" class="att-photo" alt="Pratinjau foto absensi" hidden />
+        <div class="att-actions">
+          <button class="btn btn--primary" id="att-capture" type="button">Ambil foto</button>
+          <button class="btn" id="att-retake" type="button" hidden>Ambil ulang</button>
+          <button class="btn btn--primary" id="att-use" type="button" hidden>Gunakan foto</button>
+          <button class="btn" id="att-cancel-camera" type="button">Batal</button>
+        </div>
+      </div>
+
+      <div id="att-step-location" class="att-step" hidden>
+        <p class="att-step__text">Memeriksa lokasi perangkat untuk masuk WFO…</p>
+      </div>
+
+      <div id="att-step-summary" class="att-step" hidden>
+        <h3 class="att-step__subtitle">Ringkasan</h3>
+        <dl class="session-info">
+          <div class="session-info__row">
+            <dt>Jenis</dt>
+            <dd id="sum-jenis">-</dd>
+          </div>
+          <div class="session-info__row">
+            <dt>Mode kerja</dt>
+            <dd id="sum-mode">-</dd>
+          </div>
+          <div class="session-info__row">
+            <dt>Foto</dt>
+            <dd id="sum-foto">-</dd>
+          </div>
+          <div class="session-info__row" id="sum-gps-row" hidden>
+            <dt>Lokasi GPS</dt>
+            <dd id="sum-gps">-</dd>
+          </div>
+        </dl>
+        <div class="att-actions">
+          <button class="btn btn--primary" id="att-submit" type="button">Kirim absensi</button>
+          <button class="btn" id="att-restart" type="button">Ulangi dari awal</button>
+        </div>
+      </div>
+
+      <div id="att-result" class="att-result" hidden>
+        <h3 class="att-result__title" id="att-result-title">Absensi tercatat</h3>
+        <p class="att-result__detail" id="att-result-detail"></p>
+        <button class="btn" id="att-result-close" type="button">Tutup</button>
+      </div>
+
+      <p id="att-status" class="att-status" role="status" aria-live="polite" hidden></p>
+    </section>
+
+    <section id="admin-view" class="admin-panel" aria-labelledby="admin-title" hidden>
+      <h2 class="admin-panel__title" id="admin-title">Panel Admin</h2>
+
+      <nav class="admin-tabs" aria-label="Menu admin">
+        <button class="btn admin-tab" type="button" data-admin-tab="pegawai">Pegawai</button>
+        <button class="btn admin-tab" type="button" data-admin-tab="absensi">Absensi</button>
+        <button class="btn admin-tab" type="button" data-admin-tab="susulan">Susulan</button>
+        <button class="btn admin-tab" type="button" data-admin-tab="log">Log audit</button>
+      </nav>
+
+      <p id="admin-status" class="att-status" role="status" aria-live="polite" hidden></p>
+
+      <div id="admin-tab-pegawai" class="admin-tab-panel" hidden>
+        <form id="pegawai-form" class="admin-form" novalidate>
+          <h3 class="att-step__subtitle" id="pegawai-form-title">Tambah pegawai</h3>
+          <div class="form-field">
+            <label class="form-label" for="pegawai-nama">Nama</label>
+            <input class="form-input" id="pegawai-nama" type="text" maxlength="120" required />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="pegawai-nip">NIP / NIPK</label>
+            <input class="form-input" id="pegawai-nip" type="text" maxlength="40" required />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="pegawai-jabatan">Jabatan</label>
+            <input class="form-input" id="pegawai-jabatan" type="text" maxlength="120" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="pegawai-unit">Unit kerja</label>
+            <input class="form-input" id="pegawai-unit" type="text" maxlength="120" />
+          </div>
+          <div class="att-actions">
+            <button class="btn btn--primary" id="pegawai-submit" type="submit">Simpan</button>
+            <button class="btn" id="pegawai-cancel" type="button" hidden>Batal edit</button>
+          </div>
+          <p class="form-message" id="pegawai-message" role="status" aria-live="polite" hidden></p>
+        </form>
+
+        <div class="admin-filters">
+          <div class="form-field">
+            <label class="form-label" for="pegawai-q">Cari</label>
+            <input class="form-input" id="pegawai-q" type="search" placeholder="Nama atau NIP" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="pegawai-status-filter">Status</label>
+            <select class="form-input" id="pegawai-status-filter">
+              <option value="">Semua</option>
+              <option value="aktif">Aktif</option>
+              <option value="nonaktif">Nonaktif</option>
+            </select>
+          </div>
+          <button class="btn" id="pegawai-reload" type="button">Muat ulang</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="pegawai-table">
+            <thead>
+              <tr><th>Nama</th><th>NIP/NIPK</th><th>Jabatan</th><th>Unit kerja</th><th>Status</th><th>Aksi</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="pegawai-detail" class="admin-detail" hidden></div>
+      </div>
+
+      <div id="admin-tab-absensi" class="admin-tab-panel" hidden>
+        <div class="admin-filters">
+          <div class="form-field">
+            <label class="form-label" for="absensi-tanggal">Tanggal</label>
+            <input class="form-input" id="absensi-tanggal" type="date" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="absensi-jenis">Jenis</label>
+            <select class="form-input" id="absensi-jenis">
+              <option value="">Semua</option>
+              <option value="masuk">Masuk</option>
+              <option value="pulang">Pulang</option>
+            </select>
+          </div>
+          <button class="btn" id="absensi-reload" type="button">Muat</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="absensi-table">
+            <thead>
+              <tr><th>Tanggal</th><th>Nama</th><th>Jenis</th><th>Mode</th><th>Sumber</th><th>Bukti</th><th>Aksi</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="absensi-detail" class="admin-detail" hidden></div>
+      </div>
+
+      <div id="admin-tab-susulan" class="admin-tab-panel" hidden>
+        <div class="admin-filters">
+          <div class="form-field">
+            <label class="form-label" for="susulan-status-filter">Status</label>
+            <select class="form-input" id="susulan-status-filter">
+              <option value="">Semua</option>
+              <option value="menunggu">Menunggu</option>
+              <option value="diterima">Diterima</option>
+              <option value="ditolak">Ditolak</option>
+            </select>
+          </div>
+          <button class="btn" id="susulan-reload" type="button">Muat</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="susulan-table">
+            <thead>
+              <tr><th>Tanggal</th><th>Nama</th><th>Jenis</th><th>Status</th><th>Pengajuan (server)</th><th>Aksi</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="susulan-detail" class="admin-detail" hidden></div>
+      </div>
+
+      <div id="admin-tab-log" class="admin-tab-panel" hidden>
+        <div class="admin-filters">
+          <div class="form-field">
+            <label class="form-label" for="log-aksi">Aksi</label>
+            <input class="form-input" id="log-aksi" type="text" maxlength="60" placeholder="mis. login_success" />
+          </div>
+          <button class="btn" id="log-reload" type="button">Muat</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="log-table">
+            <thead>
+              <tr><th>Waktu</th><th>Aksi</th><th>Aktor</th><th>Peran</th><th>Target</th><th>Detail</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <section class="status-grid" aria-label="Status sistem">
       <article class="card">
         <h2 class="card__title">Status aplikasi</h2>
@@ -81,7 +308,7 @@
           <span class="dot dot--neutral" aria-hidden="true"></span>
           <span id="app-status" class="card__value">Fondasi belum terhubung ke backend</span>
         </p>
-        <p class="card__hint">Frontend statis. Autentikasi NIP/NIPK + PIN tersedia pada tahap ini.</p>
+        <p class="card__hint">Frontend statis. Autentikasi &amp; absensi reguler (kamera/GPS) tersedia pada tahap ini.</p>
       </article>
 
       <article class="card">
@@ -121,6 +348,9 @@
   <script src="./assets/js/config.js"></script>
   <script src="./assets/js/api.js"></script>
   <script src="./assets/js/app.js"></script>
+  <script src="./assets/js/camera.js"></script>
+  <script src="./assets/js/attendance.js"></script>
   <script src="./assets/js/auth.js"></script>
+  <script src="./assets/js/admin.js"></script>
 </body>
 </html>

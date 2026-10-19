@@ -1,16 +1,17 @@
 /**
  * Sistem Absensi KPU Kabupaten Aceh Selatan — titik masuk backend Apps Script.
- * PHASE 2 (autentikasi & akun).
+ * PHASE 2 (autentikasi) + PHASE 3 (mesin absensi).
  *
  * Titik masuk:
  * - doGet(e)  : permintaan baca ringan (health check).
- * - doPost(e) : permintaan tulis/autentikasi.
+ * - doPost(e) : permintaan tulis/autentikasi/absensi.
  *
  * Catatan keamanan:
  * - Token sesi hanya diterima/dikirim lewat BODY (bukan query string).
  * - Web App: execute as USER_DEPLOYING, access ANYONE_ANONYMOUS (D8) →
  *   TIDAK ada cookie HttpOnly (keterbatasan Apps Script); lihat docs/SECURITY.md.
  * - Detail error internal tidak dibocorkan ke pemanggil.
+ * - Identitas pegawai & waktu keputusan selalu dari server (bukan klien).
  */
 
 /**
@@ -91,6 +92,30 @@ function route_(action, payload, method) {
       return handleAccountSetActive_(payload, method);
     case 'admin.account.resetPin':
       return handleResetPin_(payload, method);
+    case 'attendance.submit':
+      return handleAttendanceSubmit_(payload, method);
+    case 'admin.pegawai.list':
+      return handleAdminPegawaiList_(payload, method);
+    case 'admin.pegawai.detail':
+      return handleAdminPegawaiDetail_(payload, method);
+    case 'admin.pegawai.create':
+      return handleAdminPegawaiCreate_(payload, method);
+    case 'admin.pegawai.update':
+      return handleAdminPegawaiUpdate_(payload, method);
+    case 'admin.pegawai.setActive':
+      return handleAdminPegawaiSetActive_(payload, method);
+    case 'admin.absensi.list':
+      return handleAdminAbsensiList_(payload, method);
+    case 'admin.absensi.detail':
+      return handleAdminAbsensiDetail_(payload, method);
+    case 'admin.susulan.list':
+      return handleAdminSusulanList_(payload, method);
+    case 'admin.susulan.detail':
+      return handleAdminSusulanDetail_(payload, method);
+    case 'admin.susulan.decide':
+      return handleAdminSusulanDecide_(payload, method);
+    case 'admin.log.list':
+      return handleAdminLogList_(payload, method);
     default:
       return {
         ok: false,
@@ -108,9 +133,10 @@ function handleHealth_() {
   return {
     ok: true,
     service: 'absensi-kpu-aceh-selatan',
-    phase: 'auth',
+    phase: 'admin',
     timezone: getAppTimezone_(),
     backendConfigured: isBackendConfigured_(),
+    officeLocationConfigured: isOfficeLocationConfigured_(),
     serverTime: new Date().toISOString()
   };
 }

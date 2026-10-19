@@ -392,11 +392,11 @@ check('resetPin ditolak (NOT_AVAILABLE, keputusan D5)', () => {
 /* ---------------- Router ---------------- */
 
 console.log('== Router (Code.gs) ==');
-check('route_ health ok & phase auth', () => {
+check('route_ health ok & phase admin', () => {
   const { sandbox } = createEnv();
   const res = sandbox.route_('health', {}, 'GET');
   if (!res.ok) throw new Error('health gagal');
-  if (res.phase !== 'auth') throw new Error('phase salah');
+  if (res.phase !== 'admin') throw new Error('phase salah: ' + res.phase);
   return true;
 });
 check('route_ aksi tak dikenal', () => {

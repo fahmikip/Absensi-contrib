@@ -47,6 +47,9 @@ console.log('== Struktur berkas ==');
   'assets/js/api.js',
   'assets/js/app.js',
   'assets/js/auth.js',
+  'assets/js/camera.js',
+  'assets/js/attendance.js',
+  'assets/js/admin.js',
   'assets/icons/icon-192.png',
   'assets/icons/icon-512.png',
   '.gitignore',
@@ -56,12 +59,17 @@ console.log('== Struktur berkas ==');
   'gas/Repo.gs',
   'gas/AuthService.gs',
   'gas/Bootstrap.gs',
+  'gas/TimeRule.gs',
+  'gas/Geo.gs',
+  'gas/Drive.gs',
+  'gas/Attendance.gs',
+  'gas/AdminService.gs',
   'gas/appsscript.json',
   'gas/README.md'
 ].forEach((f) => check('ada: ' + f, () => existsSync(abs(f))));
 
 console.log('== Sintaks JavaScript frontend ==');
-['assets/js/config.js', 'assets/js/api.js', 'assets/js/app.js', 'assets/js/auth.js', 'service-worker.js'].forEach((f) => {
+['assets/js/config.js', 'assets/js/api.js', 'assets/js/app.js', 'assets/js/auth.js', 'assets/js/admin.js', 'service-worker.js'].forEach((f) => {
   check('sintaks: ' + f, () => {
     execFileSync(process.execPath, ['--check', abs(f)]);
     return true;
@@ -69,7 +77,7 @@ console.log('== Sintaks JavaScript frontend ==');
 });
 
 console.log('== Sintaks Apps Script (.gs) ==');
-['gas/Code.gs', 'gas/Config.gs', 'gas/Auth.gs', 'gas/Repo.gs', 'gas/AuthService.gs', 'gas/Bootstrap.gs'].forEach((f) => {
+['gas/Code.gs', 'gas/Config.gs', 'gas/Auth.gs', 'gas/Repo.gs', 'gas/AuthService.gs', 'gas/AdminService.gs', 'gas/Bootstrap.gs'].forEach((f) => {
   check('sintaks: ' + f, () => {
     const tmp = join(tmpdir(), 'check-' + f.replace(/[\\/]/g, '_') + '.js');
     copyFileSync(abs(f), tmp);
@@ -128,6 +136,7 @@ const frontendFiles = [
   'assets/js/api.js',
   'assets/js/app.js',
   'assets/js/auth.js',
+  'assets/js/admin.js',
   'service-worker.js'
 ];
 const secretPatterns = [
@@ -150,7 +159,9 @@ frontendFiles.forEach((f) => {
 
 check('API_BASE_URL masih kosong (backend belum dikonfigurasi)', () => {
   const text = readFileSync(abs('assets/js/config.js'), 'utf8');
-  if (!/API_BASE_URL:\s*''/.test(text)) throw new Error('API_BASE_URL seharusnya masih kosong');
+  const m = text.match(/API_BASE_URL\s*:\s*['"]([^'\"]*)['"]/);
+  if (!m) throw new Error('API_BASE_URL tidak ditemukan');
+  if (m[1] !== '') throw new Error('API_BASE_URL seharusnya kosong (placeholder deployment tidak diizinkan oleh tes)');
   return true;
 });
 

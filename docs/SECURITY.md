@@ -1,6 +1,6 @@
 # SECURITY — Threat Model Awal & Mitigasi
 
-> Status: **PHASE 2 — autentikasi diimplementasikan & diuji lokal (Node).**
+> Status: **PHASE 4 — panel admin diimplementasikan & diuji lokal (Node).**
 > Ini model ancaman, bukan jaminan keamanan. Aplikasi TIDAK boleh diklaim
 > "sepenuhnya aman" — belum ada audit independen maupun pengujian runtime.
 > Bagian autentikasi/PHASE 2: lihat `docs/PHASE2_AUDIT.md`.
@@ -29,14 +29,14 @@ Lihat `docs/PHASE2_AUDIT.md` §2 untuk sumber dan implikasi.
 | T-01 | Brute-force PIN | Akun diambil alih | PBKDF2-HMAC-SHA256 + salt + lockout 5×/15 mnt (D3); pencatatan percobaan | Sebagian (kode; uji lokal LULUS, runtime belum) |
 | T-02 | Pemalsuan request dari frontend (mis. timestamp/GPS dikirim klien) | Absensi palsu | Waktu & validasi ditentukan server; klien hanya mengirim data mentah yang diverifikasi ulang (AMB-07/08) | Belum diterapkan |
 | T-03 | Manipulasi jam perangkat | Absensi di luar jam | Server memakai waktu server `Asia/Jakarta`, bukan klien | Belum diterapkan |
-| T-04 | Manipulasi parameter ID pegawai | Akses/pengubahan data pegawai lain | Otorisasi per-identitas di backend; token sesi terikat ke pegawai | Sebagian (aktor & peran dari sesi server; endpoint data pegawai belum ada) |
-| T-05 | Akses data lintas pegawai | Kebocoran data pribadi | Backend hanya mengembalikan data milik pemanggil (kecuali admin) | Belum diterapkan (belum ada endpoint data pegawai) |
-| T-06 | Akses foto via tautan publik | Foto privat bocor | Drive privat; dilarang anyone-with-link; akses via backend ber-otorisasi (AMB-20) | Belum diterapkan |
-| T-07 | Penyalahgunaan endpoint admin | Manipulasi data | Cek peran admin di backend setiap request (jangan percaya klien) | Sebagian (cek peran admin di kode; uji lokal LULUS) |
-| T-08 | Permintaan ganda / race condition | Duplikasi absensi | `LockService` + kunci unik (pegawai+tanggal+jenis); idempotency | Belum diterapkan |
+| T-04 | Manipulasi parameter ID pegawai | Akses/pengubahan data pegawai lain | Otorisasi per-identitas di backend; token sesi terikat ke pegawai | Sebagian (admin: ID diverifikasi terhadap sheet, bukan klien; akses pegawai-sendiiri belum) |
+| T-05 | Akses data lintas pegawai | Kebocoran data pribadi | Backend hanya mengembalikan data milik pemanggil (kecuali admin) | Sebagian (endpoint admin ber-otorisasi; endpoint data pegawai non-admin belum ada) |
+| T-06 | Akses foto via tautan publik | Foto privat bocor | Drive privat; dilarang anyone-with-link; akses via backend ber-otorisasi (AMB-20) | Sebagian (tanggap admin TANPA `drive_file_id`/URL; endpoint foto sengaja belum ada) |
+| T-07 | Penyalahgunaan endpoint admin | Manipulasi data | Cek peran admin di backend setiap request (jangan percaya klien) | Sebagian (**PHASE 4: 11 endpoint `requireAdmin_`, diuji lokal 156 cek LULUS; runtime & browser belum**) |
+| T-08 | Permintaan ganda / race condition | Duplikasi absensi | `LockService` + kunci unik (pegawai+tanggal+jenis); idempotency | Sebagian (tulisan absensi & admin dibungkus lock di kode; keputusan susulan ganda → CONFLICT; uji runtime belum) |
 | T-09 | Penyalahgunaan token/sesi | Akses tidak sah | Token acak kuat, disimpan sebagai hash, masa berlaku, revoke saat logout | Sebagian (kode; token di memori D1) |
-| T-10 | Kebocoran konfigurasi/log | Eksposur resource | Secrets via Script Properties; log tanpa data pribadi/PIN/token | Sebagian (kode + uji lokal LULUS) |
-| T-11 | Perubahan/penghapusan tanpa jejak | Tidak dapat diaudit | `LogAktivitas` append-only dengan aktor & waktu | Sebagian (login/logout/akun dicatat; kode) |
+| T-10 | Kebocoran konfigurasi/log | Eksposur resource | Secrets via Script Properties; log tanpa data pribadi/PIN/token | Sebagian (kode + uji lokal LULUS; log admin diuji tanpa token/PIN) |
+| T-11 | Perubahan/penghapusan tanpa jejak | Tidak dapat diaudit | `LogAktivitas` append-only dengan aktor & waktu | Sebagian (login/logout/akun + **aksi pegawai & keputusan susulan (PHASE 4)** dicat; kode) |
 | T-12 | Kegagalan parsial Drive↔Sheets | Data tak konsisten | Urutan tulis & kompensasi; tandai status "perlu ditindaklanjuti"; jangan klaim berhasil | Belum diterapkan |
 | T-13 | CORS / endpoint Apps Script publik | Request dari domain tak dikenal | Batasi/validasi Origin; token wajib (terkait AMB-21) | Belum diterapkan (D8 `ANYONE_ANONYMOUS`; validasi Origin belum) |
 
@@ -87,3 +87,28 @@ Belum / belum terverifikasi:
 - Belum ada pengujian penetrasi / review independen.
 - Kripto PBKDF2 adalah kode kustom (Apps Script tanpa KDF bawaan) → risiko implementasi.
 - Audit & opsi keputusan: `docs/PHASE2_AUDIT.md`.
+
+## Status Panel Admin PHASE 4 (terimplementasi, diuji lokal)
+Kontrol di `gas/AdminService.gs` (semua aksi `admin.*`):
+- **Otorisasi server penuh:** setiap aksi → `requirePost_` + `requireAdmin_`;
+  peran diambil dari sesi terverifikasi server, TIDAK dari body klien.
+  Diuji: tanpa token → `UNAUTHORIZED`; token pegawai → `FORBIDDEN`;
+  peran palsu di body diabaikan; GET → `METHOD_NOT_ALLOWED` (156 cek LULUS).
+- **Rahasia tidak dikirim:** `pin_hash`/`pin_salt` tidak pernah masuk respons
+  pegawai; log admin diuji tanpa token/PIN mentah.
+- **Foto:** respons absensi/susulan hanya metadata bukti (ada/mime/ukuran/path);
+  `drive_file_id`/URL TIDAK dikirim — akses foto menunggu AMB-20; tidak ada
+  endpoint foto sama sekali.
+- **Keputusan susulan:** hanya admin sesi; status awal wajib `menunggu`
+  (keputusan ganda → `CONFLICT`); `waktu_keputusan` dari server; `id_admin`
+  = id_akun pemutus; seluruh keputusan tercatat di `LogAktivitas`.
+- **Tulisan di bawah `LockService`** (create/update/setActive/decide);
+  keputusan susulan sengaja TIDAK menulis baris Absensi (belum ada aturan).
+- **UI `admin.js`:** hanya hiasan; render via `textContent` (anti-XSS);
+  backend tetap memvalidasi ulang semua input (validasi enum/tanggal/limit).
+
+Belum / belum terverifikasi (PHASE 4):
+- Pengujian runtime Apps Script & browser (AD-18/AD-19 di TEST_PLAN).
+- Konkurensi `LockService` pada eksekusi nyata.
+- Pembatasan jumlah data (limit 200) belum diuji pada volume besar.
+- Belum ada pembatasan rate/kuota khusus endpoint admin (kuota platform saja).

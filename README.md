@@ -7,14 +7,16 @@ Aplikasi absensi pegawai berbasis Progressive Web App (PWA).
 - **Database:** Google Sheets.
 - **Penyimpanan foto:** Google Drive privat.
 - **Zona waktu:** `Asia/Jakarta`.
-- **Versi aplikasi:** `0.2.0` (sumber: `assets/js/config.js`).
+- **Versi aplikasi:** `0.4.0` (sumber: `assets/js/config.js`).
 
 ## Status Proyek
-**PHASE 2 — Autentikasi & Akun: selesai sebagian.** Login (NIP/NIPK + PIN), sesi,
-logout, dan manajemen akun admin telah diimplementasikan & diuji lokal di Node.
-Integrasi runtime Apps Script (butuh `SPREADSHEET_ID`) dan pengujian browser
-**belum** dijalankan. Fitur absensi, kamera, GPS, susulan, dan panel admin lengkap
-**belum** dibuat. Lihat `docs/PHASE2_AUDIT.md` dan `docs/PROGRESS.md`.
+**PHASE 4 — Panel Admin: selesai (lokal).** Endpoint admin (otorisasi peran
+`admin` penuh di server), pengelolaan pegawai, daftar/detail absensi (tanpa
+tautan foto), persetujuan/penolakan susulan, dan log audit telah diimplementasikan
+& diuji lokal di Node (156 cek). Integrasi runtime Apps Script (butuh
+`SPREADSHEET_ID`) dan pengujian browser **belum** dijalankan. Pengajuan susulan
+oleh pegawai, akses foto admin (AMB-20), dan laporan **belum** dibuat.
+Lihat `docs/PROGRESS.md`.
 
 ## Struktur Proyek
 ```
@@ -22,11 +24,14 @@ index.html                  Halaman awal (status aplikasi/jaringan/backend/versi
 manifest.webmanifest        Manifest PWA
 service-worker.js           Cache aset statis (tanpa data privat)
 assets/
-  css/styles.css            Gaya dasar, responsif, mode gelap + form auth
+  css/styles.css            Gaya dasar, responsif, mode gelap + form auth + panel admin
   js/config.js              Konfigurasi PUBLIK (nama, versi, URL API)
   js/api.js                 Klien POST (token sesi hanya di memori)
   js/app.js                 Logika antarmuka (status jaringan/backend)
   js/auth.js                UI login/logout (NIP/NIPK + PIN)
+  js/camera.js              Kamera → canvas JPEG (kompresi klien)
+  js/attendance.js          Alur absensi (jenis/mode/GPS/foto/kirim)
+  js/admin.js               Panel admin (pegawai/absensi/susulan/log audit)
   icons/icon-192.png        Ikon placeholder (bukan logo resmi)
   icons/icon-512.png
 gas/
@@ -35,13 +40,20 @@ gas/
   Auth.gs                   Primitif PBKDF2/PIN/token/lockout
   Repo.gs                   Akses Sheets, LockService, log aktivitas
   AuthService.gs            Alur login/sesi/otorisasi/manajemen akun
+  AdminService.gs           Endpoint panel admin (otorisasi admin, PHASE 4)
+  TimeRule.gs               Aturan jendela waktu absensi (WIB)
+  Geo.gs                    Haversine + evaluasi GPS masuk WFO
+  Drive.gs                  Simpan foto JPEG ke folder Drive privat
+  Attendance.gs             Mesin absensi reguler (validasi & penyimpanan)
   Bootstrap.gs              initializeSheets() & seedAdmin() (manual)
   appsscript.json           Manifest Apps Script (timezone + webapp D8)
   README.md                 Dokumentasi backend & deploy
 tools/generate-icons.mjs    Generator ikon placeholder
-tests/check-foundation.mjs  Pemeriksaan fondasi otomatis (44 cek)
+tests/check-foundation.mjs  Pemeriksaan fondasi otomatis (54 cek)
 tests/harness.mjs           Stub runtime Apps Script untuk pengujian Node
 tests/auth.test.mjs         Pengujian autentikasi otomatis (42 cek)
+tests/attendance.test.mjs   Pengujian mesin absensi otomatis (112 cek)
+tests/admin.test.mjs        Pengujian panel admin otomatis (156 cek)
 docs/                       Dokumentasi proyek
 ```
 
@@ -54,11 +66,15 @@ Lalu buka `http://127.0.0.1:8765/`.
 
 ## Pengujian
 ```
-node tests/check-foundation.mjs   # struktur, sintaks, JSON, ikon, tanpa rahasia (44 cek)
+node tests/check-foundation.mjs   # struktur, sintaks, JSON, ikon, tanpa rahasia (54 cek)
 node tests/auth.test.mjs          # autentikasi & kripto (42 cek, termasuk RFC 7914 §11)
+node tests/attendance.test.mjs    # mesin absensi: waktu/GPS/foto/duplikat (112 cek)
+node tests/admin.test.mjs         # panel admin: otorisasi/pegawai/absensi/susulan/log (156 cek)
 ```
-Pengujian autentikasi berjalan di Node dengan stub runtime Apps Script; ini
-**bukan** pengganti pengujian di runtime Apps Script nyata (lihat `docs/TEST_PLAN.md`).
+Pengujian berjalan di Node dengan stub runtime Apps Script; ini **bukan**
+pengganti pengujian di runtime Apps Script nyata (lihat `docs/TEST_PLAN.md`).
+Catatan: `check-foundation` saat ini memiliki 1 kegagalan FD-09 (`API_BASE_URL`
+terisi) yang pre-existing — lihat `docs/PROGRESS.md` PHASE 4 "Temuan".
 
 ## Dokumentasi
 | Dokumen | Isi |

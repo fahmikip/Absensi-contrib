@@ -17,7 +17,12 @@ const GAS_FILES = [
   'gas/Config.gs',
   'gas/Auth.gs',
   'gas/Repo.gs',
+  'gas/TimeRule.gs',
+  'gas/Geo.gs',
+  'gas/Drive.gs',
+  'gas/Attendance.gs',
   'gas/AuthService.gs',
+  'gas/AdminService.gs',
   'gas/Code.gs',
   'gas/Bootstrap.gs'
 ];
@@ -42,6 +47,9 @@ function makeSheet(name) {
     },
     appendRow(row) {
       data.push(row.slice());
+    },
+    deleteRow(rowNumber) {
+      data.splice(rowNumber - 1, 1);
     },
     getRange(rowStart, colStart, numRows, numCols) {
       return {
@@ -71,6 +79,45 @@ function makeSpreadsheet() {
   };
 }
 
+/** Stub folder Drive sederhana (hierarki in-memory untuk pengujian). */
+function makeDriveFolder(name, registry) {
+  const folders = new Map();
+  const files = [];
+  const folder = {
+    _name: name,
+    getFoldersByName(n) {
+      const found = folders.has(n) ? [folders.get(n)] : [];
+      let i = 0;
+      return { hasNext: () => i < found.length, next: () => found[i++] };
+    },
+    createFolder(n) {
+      const f = makeDriveFolder(n, registry);
+      folders.set(n, f);
+      return f;
+    },
+    createFile(blob) {
+      const file = {
+        _name: blob.getName ? blob.getName() : 'file',
+        _bytes: blob.getBytes ? blob.getBytes() : [],
+        _trashed: false,
+        _shared: false,
+        getId: () => 'DRV-' + registry.files.length + '-' + Math.random().toString(36).slice(2, 8),
+        getName() { return this._name; },
+        getBytes() { return this._bytes.slice(); },
+        getContentType: () => blob.getContentType ? blob.getContentType() : '',
+        setSharing() { this._shared = true; return this; },
+        setTrashed(v) { this._trashed = Boolean(v); return this; }
+      };
+      files.push(file);
+      registry.files.push(file);
+      return file;
+    },
+    _files: files,
+    _folders: folders
+  };
+  return folder;
+}
+
 /**
  * @param {{props?: Object}} [options]
  * @return {{sandbox:Object, props:Map, spreadsheet:Object, logs:Array}}
@@ -79,6 +126,23 @@ export function createEnv(options = {}) {
   const spreadsheet = makeSpreadsheet();
   const props = new Map(Object.entries(options.props || {}));
   const logs = [];
+  const driveRegistry = { files: [] };
+  const driveRoots = new Map();
+
+  function formatDateJkt(date, timeZone, pattern) {
+    const d = (date instanceof Date) ? date : new Date(date);
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hourCycle: 'h23'
+    });
+    const p = {};
+    for (const part of fmt.formatToParts(d)) p[part.type] = part.value;
+    if (pattern === 'yyyy-MM-dd') return `${p.year}-${p.month}-${p.day}`;
+    if (pattern === 'HHmmss') return `${p.hour}${p.minute}${p.second}`;
+    throw new Error('pattern formatDate tidak didukung di harness: ' + pattern);
+  }
 
   const sandbox = {
     console,
@@ -95,7 +159,13 @@ export function createEnv(options = {}) {
         return signed(createHash('sha256').update(String(value), 'utf8').digest());
       },
       base64Encode: (bytes) => Buffer.from(unsigned(bytes)).toString('base64'),
-      base64Decode: (b64) => signed(Buffer.from(b64, 'base64'))
+      base64Decode: (b64) => signed(Buffer.from(b64, 'base64')),
+      newBlob: (bytes, contentType, name) => ({
+        getBytes: () => unsigned(bytes),
+        getContentType: () => contentType,
+        getName: () => name
+      }),
+      formatDate: formatDateJkt
     },
     PropertiesService: {
       getScriptProperties: () => ({
@@ -107,6 +177,21 @@ export function createEnv(options = {}) {
     SpreadsheetApp: { openById: () => spreadsheet },
     LockService: {
       getScriptLock: () => ({ waitLock() {}, releaseLock() {} })
+    },
+    DriveApp: {
+      Access: { ANYONE_WITH_LINK: 'ANYONE_WITH_LINK' },
+      Permission: { NONE: 'NONE' },
+      getFolderById(id) {
+        if (!driveRoots.has(id)) {
+          driveRoots.set(id, makeDriveFolder('root-' + id, driveRegistry));
+        }
+        return driveRoots.get(id);
+      },
+      getFileById(id) {
+        const found = driveRegistry.files.find((f) => f.getId() === id);
+        if (!found) throw new Error('file tidak ditemukan: ' + id);
+        return found;
+      }
     },
     ContentService: {
       MimeType: { JSON: 'application/json' },
@@ -125,7 +210,7 @@ export function createEnv(options = {}) {
     runInContext(readFileSync(join(ROOT, f), 'utf8'), sandbox, { filename: f });
   }
 
-  return { sandbox, props, spreadsheet, logs };
+  return { sandbox, props, spreadsheet, logs, driveRegistry, driveRoots };
 }
 
 /** Hmac SHA-256 murni Node untuk menguji PBKDF2 tanpa stub Apps Script. */

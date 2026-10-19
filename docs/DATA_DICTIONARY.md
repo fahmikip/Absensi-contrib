@@ -96,6 +96,9 @@ Legenda: `PK` kunci utama internal · `FK` referensi · `?` belum tersedia/opsio
 > Append-only; tidak diubah/dihapus.
 
 ## 8. `PengajuanSusulan`
+> **Digunakan sejak PHASE 4** (daftar/detail/keputusan admin — `AdminService.gs`);
+> dibuat oleh `initializeSheets()`. Pengajuan oleh pegawai & aturan susulan
+> (AMB-11/12) belum ada — kolom di bawah tetap mengikuti draf yang disetujui (DEC-P15).
 | Kolom (usulan) | Tipe | Keterangan |
 |----------------|------|------------|
 | `id_pengajuan` (PK) | String | ID pengajuan |

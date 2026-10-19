@@ -1,8 +1,9 @@
-# Backend Google Apps Script — Autentikasi (PHASE 2)
+# Backend Google Apps Script — Absensi & Panel Admin (PHASE 2–4)
 
-Backend Sistem Absensi KPU Kabupaten Aceh Selatan. Pada phase ini tersedia
-autentikasi (login NIP/NIPK + PIN), sesi, logout, dan manajemen akun admin.
-Belum ada absensi, kamera, atau GPS (PHASE 3+).
+Backend Sistem Absensi KPU Kabupaten Aceh Selatan. Tersedia: autentikasi
+(login NIP/NIPK + PIN, sesi, logout, manajemen akun admin), mesin absensi
+reguler (PHASE 3), dan **panel admin** (PHASE 4: pengelolaan pegawai,
+daftar/detail absensi, putuskan susulan, log audit).
 
 ## Berkas
 | Berkas | Fungsi |
@@ -12,6 +13,11 @@ Belum ada absensi, kamera, atau GPS (PHASE 3+).
 | `Auth.gs` | Primitif PBKDF2-HMAC-SHA256, PIN, token, lockout, validitas sesi. |
 | `Repo.gs` | Akses Google Sheets, `LockService`, ID internal, log aktivitas. |
 | `AuthService.gs` | Alur login/logout/session.check, otorisasi peran, manajemen akun admin. |
+| `AdminService.gs` | Endpoint panel admin (semua wajib peran `admin` diverifikasi server). |
+| `TimeRule.gs` | Aturan jendela waktu absensi (WIB; DEC-003/DEC-P18). |
+| `Geo.gs` | Haversine + evaluasi GPS masuk WFO (radius ≤50 m). |
+| `Drive.gs` | Simpan foto JPEG ke folder Drive privat ABSENSI_KPU/… |
+| `Attendance.gs` | Mesin absensi reguler (validasi, lock, kompensasi parsial). |
 | `Bootstrap.gs` | Fungsi manual `initializeSheets()` & `seedAdmin()`. |
 | `appsscript.json` | Manifest (zona waktu `Asia/Jakarta`, runtime V8, `webapp` D8). |
 
@@ -29,6 +35,24 @@ Token sesi HANYA dikirim di body (bukan query string).
 | `admin.account.create` | POST | Ya (admin) | Membuat akun untuk pegawai terdaftar (TANPA menerbitkan PIN). |
 | `admin.account.setActive` | POST | Ya (admin) | Aktif/nonaktif akun; nonaktif mencabut semua sesi. |
 | `admin.account.resetPin` | POST | — | **NOT_AVAILABLE** (menunggu keputusan D5). |
+| `attendance.submit` | POST | Ya | Absensi reguler (foto JPEG + GPS masuk WFO). |
+| `admin.pegawai.list` | POST | Ya (admin) | Daftar pegawai (filter q/status/limit). |
+| `admin.pegawai.detail` | POST | Ya (admin) | Detail pegawai + info akun (tanpa hash PIN). |
+| `admin.pegawai.create` | POST | Ya (admin) | Tambah pegawai (kolom DATA_DICTIONARY §1). |
+| `admin.pegawai.update` | POST | Ya (admin) | Ubah nama/NIP/jabatan/unit kerja. |
+| `admin.pegawai.setActive` | POST | Ya (admin) | Aktif/nonaktif pegawai; nonaktif mencabut sesi; riwayat absensi tetap. |
+| `admin.absensi.list` | POST | Ya (admin) | Daftar absensi (filter tanggal/jenis/pegawai); tanpa referensi foto. |
+| `admin.absensi.detail` | POST | Ya (admin) | Detail absensi + metadata bukti (ada/mime/ukuran/path). |
+| `admin.susulan.list` | POST | Ya (admin) | Daftar pengajuan susulan (filter status). |
+| `admin.susulan.detail` | POST | Ya (admin) | Detail pengajuan + alasan + status keputusan. |
+| `admin.susulan.decide` | POST | Ya (admin) | `keputusan:'terima'|'tolak'` + `catatan_keputusan`; hanya dari `menunggu`. |
+| `admin.log.list` | POST | Ya (admin) | Log audit (filter aksi/limit). |
+
+Catatan PHASE 4:
+- Respons **tidak pernah** memuat `pin_hash`, `pin_salt`, `drive_file_id`, atau
+  URL foto (akses foto menunggu AMB-20).
+- Keputusan susulan hanya mengubah status pengajuan + log; **tidak** otomatis
+  menulis baris `Absensi` (keputusan aturan belum ada).
 
 Contoh respons login sukses:
 ```json
@@ -60,7 +84,8 @@ Isi via **Project Settings → Script Properties** (jangan simpan di kode):
 1. Set Script Properties `SPREADSHEET_ID` dan (sementara) `ADMIN_SETUP_NIP`,
    `ADMIN_SETUP_PIN`, opsional `ADMIN_SETUP_NAMA`.
 2. Di editor Apps Script, jalankan `initializeSheets()` → membuat sheet
-   `Pegawai`, `Akun`, `Sesi`, `LogAktivitas` beserta header.
+   `Pegawai`, `Akun`, `Sesi`, `Absensi`, `BuktiAbsensi`, `PengajuanSusulan`,
+   `LogAktivitas` beserta header.
 3. Jalankan `seedAdmin()` → membuat 1 akun admin. **Hapus** `ADMIN_SETUP_PIN`
    (dan `ADMIN_SETUP_NIP`) setelah berhasil.
 4. Deploy → **Web app** → *Execute as*: **Me**, *Who has access*: **Anyone** (D8).
@@ -74,5 +99,7 @@ Isi via **Project Settings → Script Properties** (jangan simpan di kode):
 
 ## Belum Diimplementasikan
 - Penerbitan/reset PIN (D5).
-- Absensi, kamera, GPS.
-- Manajemen pegawai lengkap & laporan.
+- Pengajuan susulan oleh pegawai (form/alur belum ada; hanya keputusan admin).
+- Akses/penampilan foto oleh admin (AMB-20) — tidak ada endpoint foto.
+- Impor CSV (AMB-14), retensi (AMB-18), notifikasi (AMB-25).
+- Laporan/ekspor (PHASE 5).

@@ -1,7 +1,8 @@
 # ARCHITECTURE — Arsitektur Sistem
 
-> Status: **PHASE 2 — autentikasi diimplementasikan.** Fondasi PHASE 1 tersedia;
-> login/sesi/manajemen akun ada & diuji lokal. Absensi (PHASE 3) belum.
+> Status: **PHASE 4 — panel admin diimplementasikan & diuji lokal (Node).**
+> Fondasi PHASE 1–3 (autentikasi, mesin absensi) tersedia. Integrasi runtime
+> Apps Script & pengujian browser belum (butuh `SPREADSHEET_ID`, DEC-P08).
 
 ## Alur Tingkat Tinggi
 ```
@@ -14,41 +15,59 @@ Google Apps Script Web App  (doGet/doPost; satu-satunya lapisan tepercaya)
         +--> Google Drive    (foto privat)
 ```
 
-## Struktur Frontend (aktual PHASE 2)
-- `index.html` — halaman awal + panel masuk/sesi; menampilkan status aplikasi,
-  jaringan, backend, dan versi. Tidak ada data fiktif.
+## Struktur Frontend (aktual PHASE 4)
+- `index.html` — halaman awal + panel masuk/sesi + section absensi +
+  **section `admin-view`** (tab Pegawai/Absensi/Susulan/Log audit); menampilkan
+  status aplikasi, jaringan, backend, dan versi. Tidak ada data fiktif.
 - `manifest.webmanifest` — manifest PWA (`start_url`/`scope` relatif `./` agar
   kompatibel dengan sub-path GitHub Pages).
-- `service-worker.js` — cache aset statis only (termasuk `api.js`/`auth.js`);
-  permintaan lintas-origin diteruskan tanpa di-cache; navigasi fallback app shell.
-- `assets/css/styles.css` — gaya netral, responsif, mode gelap sistem + form.
+- `service-worker.js` — cache aset statis only (termasuk `api.js`/`auth.js`/
+  `camera.js`/`attendance.js`/`admin.js`); permintaan lintas-origin diteruskan
+  tanpa di-cache; navigasi fallback app shell.
+- `assets/css/styles.css` — gaya netral, responsif, mode gelap sistem + form +
+  panel admin.
 - `assets/js/config.js` — konfigurasi publik (nama, versi, `API_BASE_URL`). Tanpa rahasia.
 - `assets/js/api.js` — klien POST `text/plain`; token sesi HANYA di memori (D1).
 - `assets/js/app.js` — status jaringan, status backend (health check), registrasi SW.
-- `assets/js/auth.js` — UI login/logout (NIP/NIPK + PIN); tidak menyimpan PIN.
+- `assets/js/auth.js` — UI login/logout (NIP/NIPK + PIN); dispatch event
+  `auth:login`/`auth:logout`.
+- `assets/js/camera.js` — kamera → canvas JPEG (DEC-P17).
+- `assets/js/attendance.js` — alur absensi (jendela waktu/GPS/foto/idempoten).
+- `assets/js/admin.js` — panel admin (PHASE 4); tampil hanya bila peran `admin`
+  (event `auth:login`); render data via `textContent` (anti-XSS); tanpa URL foto.
 - `assets/icons/` — ikon placeholder netral, dibuat `tools/generate-icons.mjs`.
 
-Modul kamera & GPS **belum** ada — menunggu PHASE 3.
-
-## Struktur Backend (aktual PHASE 2)
+## Struktur Backend (aktual PHASE 4)
 - `gas/Code.gs` — `doGet`/`doPost`, router aksi, respons JSON konsisten.
   Aksi: `health`, `login`, `logout`, `session.check`,
-  `admin.account.create`, `admin.account.setActive`, `admin.account.resetPin`.
+  `admin.account.create`, `admin.account.setActive`, `admin.account.resetPin`,
+  `attendance.submit`, dan 11 aksi PHASE 4:
+  `admin.pegawai.list|detail|create|update|setActive`,
+  `admin.absensi.list|detail`, `admin.susulan.list|detail|decide`,
+  `admin.log.list`.
 - `gas/Config.gs` — konfigurasi Script Properties + kebijakan (iterasi PBKDF2,
   TTL sesi, lockout) + `AppError_`.
 - `gas/Auth.gs` — primitif PBKDF2-HMAC-SHA256, PIN, token, lockout, validitas sesi.
-- `gas/Repo.gs` — akses Sheets, `LockService`, ID internal, log aktivitas.
+- `gas/Repo.gs` — akses Sheets, `LockService`, ID internal, log aktivitas;
+  header `Pegawai`/`Akun`/`Sesi`/`Absensi`/`BuktiAbsensi`/`PengajuanSusulan`/`LogAktivitas`.
 - `gas/AuthService.gs` — alur autentikasi, otorisasi peran, manajemen akun admin.
+- `gas/AdminService.gs` — **endpoint panel admin (PHASE 4)**; semua aksi:
+  POST + `requireAdmin_` (peran diverifikasi dari sesi server) + `withLock_`
+  untuk operasi tulis + `logActivity_`.
+- `gas/TimeRule.gs`, `gas/Geo.gs`, `gas/Drive.gs`, `gas/Attendance.gs` — mesin absensi (PHASE 3).
 - `gas/Bootstrap.gs` — `initializeSheets()` & `seedAdmin()` (manual, tanpa PIN default).
 - `gas/appsscript.json` — timezone `Asia/Jakarta`, runtime V8, blok `webapp` (D8).
-- Validasi absensi & penyimpanan foto: BELUM ADA (PHASE 3).
 
 ## Lapisan Data
-- PHASE 2 (dibuat oleh `initializeSheets()`): `Pegawai`, `Akun`, `Sesi`, `LogAktivitas`
-  (kolom sesuai `docs/DATA_DICTIONARY.md` §9).
-- Phase lanjutan (belum): `Absensi`, `BuktiAbsensi`, `Pengaturan`, `HariLibur`,
-  `PengajuanSusulan`.
+- Sheet (dibuat `initializeSheets()`; kolom DATA_DICTIONARY.md): `Pegawai`,
+  `Akun`, `Sesi`, `Absensi`, `BuktiAbsensi`, `PengajuanSusulan`, `LogAktivitas`.
+- `Pengaturan`, `HariLibur` — belum dibuat (belum ada kebutuhan di phase ini).
 - Spreadsheet belum dibuat secara nyata (menunggu `SPREADSHEET_ID`, DEC-P08).
+
+## Akses Foto Admin (PHASE 4)
+- Panel admin hanya menerima **metadata bukti**: keberadaan, `mime`, `ukuran`,
+  `path` folder. `drive_file_id`/URL TIDAK dikirim ke klien (AMB-20 belum
+  ditetapkan); tidak ada endpoint pengambilan foto.
 
 ## Google Drive
 - Struktur privat: `ABSENSI_KPU/YYYY/MM/Foto_Masuk|Foto_Pulang/`.

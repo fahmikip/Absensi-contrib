@@ -117,3 +117,27 @@ Sumber: jawaban pengguna atas pertanyaan D0–D8 (lihat `docs/PHASE2_AUDIT.md`).
 - Detail & sumber: `docs/PHASE2_AUDIT.md` §2.
 - D1–D8 telah dijawab; PHASE 2 diimplementasikan dan diuji lokal (lihat PROGRESS.md).
 - Tidak ada standar keamanan yang diturunkan secara diam-diam.
+
+### DEC-P17 — Format & ukuran foto absensi (AMB-22)
+- Tanggal: 2026-10-19; Status: DISETUJUI (berdasarkan jawaban pengguna)
+- Keputusan:
+  - Foto dikonversi klien: canvas → JPEG, kualitas ~0.85, sisi terpanjang 1280 px.
+  - Maksimum ukuran **1.000.000 byte** (1,0 MB). Ditetapkan melalui Script Properties
+    `PHASE3_PHOTO_MAX_BYTES` (default 1.000.000 byte), dibaca oleh backend via
+    `photoMaxBytes_()`.
+  - Backend memvalidasi: decode base64, memeriksa magic bytes `FF D8 FF` (JPEG),
+    dan membatasi ukuran aktual. MIME bukan satu-satunya pemeriksaan.
+- Alasan: menyeimbangkan kualitas visual, ukuran unggahan (<=~33% overhead base64),
+  dan batas Drive/Apps Script.
+- Sumber: instruksi pengguna, TEST_PLAN.md AMB-22.
+
+### DEC-P18 — Jendela jam berlaku setiap hari (AMB-10)
+- Tanggal: 2026-10-19; Status: DISETUJUI (berdasarkan jawaban pengguna)
+- Keputusan:
+  - Aturan waktu masuk (07:00.00–08:29.59 WIB) dan pulang (16:00.00–23:59.59 WIB)
+    berlaku **setiap hari** — **tidak ada** pengecualian hari libur/akhir pekan.
+  - Tidak ada kalender kegiatan/cuti terintegrasi pada PHASE 3; bila dibutuhkan,
+    dibahas di phase berikutnya.
+- Alasan: implementasi lebih sederhana, validasi jelas, tidak bergantung pada
+  daftar hari libur yang belum ditetapkan.
+- Sumber: instruksi pengguna, TEST_PLAN.md AMB-10.

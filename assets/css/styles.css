@@ -307,6 +307,215 @@ code {
   color: var(--text-muted);
 }
 
+/* ---------------- Absensi (PHASE 3) ---------------- */
+
+.att-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+}
+
+.att-panel__title {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.att-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.att-step__text {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.att-step__subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.att-fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 0;
+  padding: 0.6rem 0.85rem 0.75rem;
+  width: 100%;
+}
+
+.att-fieldset legend {
+  padding: 0 0.3rem;
+}
+
+.att-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.att-video,
+.att-photo {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 8px;
+  background: #000;
+  display: block;
+}
+
+.att-video {
+  transform: scaleX(-1);
+}
+
+.att-photo {
+  background: var(--bg);
+}
+
+.att-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.att-status {
+  margin: 0.85rem 0 0;
+  font-size: 0.9rem;
+}
+
+.att-status--error {
+  color: var(--offline);
+}
+
+.att-status--info {
+  color: var(--text-muted);
+}
+
+.att-status--success {
+  color: var(--online);
+}
+
+.att-result {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.att-result__title {
+  margin: 0 0 0.4rem;
+  color: var(--online);
+  font-size: 1rem;
+}
+
+.att-result__detail {
+  margin: 0 0 0.85rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ---- Panel admin (PHASE 4) ---- */
+.admin-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.admin-panel__title {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+}
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.admin-tab {
+  border: 1px solid var(--border);
+}
+.admin-tab--active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.admin-tab-panel {
+  margin-top: 8px;
+}
+.admin-form {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 16px;
+  background: var(--bg);
+}
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+.admin-filters .form-field {
+  margin-bottom: 0;
+  min-width: 160px;
+}
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.admin-table th,
+.admin-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.admin-table th {
+  background: var(--bg);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+.admin-actions {
+  white-space: nowrap;
+}
+.admin-actions .btn {
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+.admin-detail {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: var(--surface);
+}
+.btn--small {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+textarea.form-input {
+  font-family: var(--font);
+  resize: vertical;
+}
+
 @media (min-width: 640px) {
   .status-grid {
     grid-template-columns: repeat(2, 1fr);

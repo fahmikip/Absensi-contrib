@@ -9,10 +9,10 @@
  * ADMIN_SETUP_* (lihat seedAdmin) agar tidak tersisa sebagai kredensial statis.
  */
 
-/** Membuat semua sheet + header PHASE 2 bila belum ada. Jalankan sekali manual. */
+/** Membuat semua sheet + header (PHASE 2 & 3) bila belum ada. Jalankan sekali manual. */
 function initializeSheets() {
   ensureAllSheets_();
-  Logger.log('initializeSheets: sheet PHASE 2 siap: ' + PHASE2_SHEET_NAMES.join(', '));
+  Logger.log('initializeSheets: sheet siap: ' + ALL_SHEET_NAMES.join(', '));
 }
 
 /**
