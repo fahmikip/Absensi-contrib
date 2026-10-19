@@ -51,6 +51,7 @@ console.log('== Struktur berkas ==');
   'assets/js/attendance.js',
   'assets/js/admin.js',
   'assets/js/report.js',
+  'assets/js/nav.js',
   'assets/icons/icon-192.png',
   'assets/icons/icon-512.png',
   '.gitignore',
@@ -71,7 +72,7 @@ console.log('== Struktur berkas ==');
 ].forEach((f) => check('ada: ' + f, () => existsSync(abs(f))));
 
 console.log('== Sintaks JavaScript frontend ==');
-['assets/js/config.js', 'assets/js/api.js', 'assets/js/app.js', 'assets/js/auth.js', 'assets/js/admin.js', 'assets/js/report.js', 'service-worker.js'].forEach((f) => {
+['assets/js/config.js', 'assets/js/api.js', 'assets/js/app.js', 'assets/js/auth.js', 'assets/js/admin.js', 'assets/js/report.js', 'assets/js/nav.js', 'service-worker.js'].forEach((f) => {
   check('sintaks: ' + f, () => {
     execFileSync(process.execPath, ['--check', abs(f)]);
     return true;
@@ -140,6 +141,7 @@ const frontendFiles = [
   'assets/js/auth.js',
   'assets/js/admin.js',
   'assets/js/report.js',
+  'assets/js/nav.js',
   'service-worker.js'
 ];
 const secretPatterns = [

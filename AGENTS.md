@@ -69,12 +69,18 @@ Google Apps Script → Google Sheets + Google Drive privat. Zona waktu `Asia/Jak
 
 ## Catatan Runtime (2026-10-19)
 - `API_BASE_URL` diperbarui ke URL Web App terbaru pengguna (DEC-P19); versi aset
-  dinaikkan ke `0.5.2` agar service worker menarik `config.js` terbaru.
+  dinaikkan ke `0.6.0`.
+- **UI 0.6.0**: app shell mobile (app bar + bilah navigasi bawah
+  Beranda/Absensi/Admin/Profil) via `assets/js/nav.js`; `index.html`,
+  `assets/css/styles.css` dirombak. Hook JS (ID/kelas `att-*`, `admin-*`,
+  `report-*`, `dot*`, `form-message*`, `session-info*`, `admin-tab--active`)
+  dipertahankan; logika bisnis tidak diubah. `[hidden]{display:none!important}`
+  ditambahkan (memperbaiki langkah absensi yang sebelumnya bisa saling tampil).
 - Health live URL terbaru: `backendConfigured:true` (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID`
   sudah diisi di Script Properties — DEC-P20, nilai tidak di repo),
   `officeLocationConfigured:false` (koordinat AMB-07 belum disimpan).
 - Probe `POST action=login` (NIP sintetis) → `AUTH_FAILED` → sheet `Akun` sudah ada.
-- Frontend live: `https://kipasel.github.io/Absensi/` (HTTP 200, versi 0.5.2);
+- Frontend live: `https://kipasel.github.io/Absensi/` (HTTP 200, versi 0.6.0);
   uji browser nyata belum dijalankan.
 
 ## Format Laporan Phase

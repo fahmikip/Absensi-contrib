@@ -15,17 +15,19 @@ Google Apps Script Web App  (doGet/doPost; satu-satunya lapisan tepercaya)
         +--> Google Drive    (foto privat)
 ```
 
-## Struktur Frontend (aktual PHASE 5)
-- `index.html` — halaman awal + panel masuk/sesi + section absensi +
-  **section `admin-view`** (tab Pegawai/Absensi/Susulan/Laporan/Log audit);
-  menampilkan status aplikasi, jaringan, backend, dan versi. Tidak ada data fiktif.
+## Struktur Frontend (aktual PHASE 6 — UI 0.6.0)
+- `index.html` — **app shell mobile**: app bar lengket (navigasi atas + chip
+  pengguna) + **bilah navigasi bawah** (Beranda/Absensi/Admin/Profil) + tampilan
+  `home-view` (status aplikasi/jaringan/backend/versi), `login-view`,
+  `attendance-view`, `admin-view` (tab Pegawai/Absensi/Susulan/Laporan/Log audit),
+  `session-view`. Tidak ada data fiktif.
 - `manifest.webmanifest` — manifest PWA (`start_url`/`scope` relatif `./` agar
   kompatibel dengan sub-path GitHub Pages).
 - `service-worker.js` — cache aset statis only (termasuk `api.js`/`auth.js`/
-  `camera.js`/`attendance.js`/`admin.js`/`report.js`); permintaan lintas-origin
-  diteruskan tanpa di-cache; navigasi fallback app shell.
-- `assets/css/styles.css` — gaya netral, responsif, mode gelap sistem + form +
-  panel admin + laporan/rekapitulasi.
+  `camera.js`/`attendance.js`/`admin.js`/`report.js`/`nav.js`); permintaan
+  lintas-origin diteruskan tanpa di-cache; navigasi fallback app shell.
+- `assets/css/styles.css` — sistem desain mobile-first (aksen indigo), app bar,
+  kartu, tombol besar, bilah navigasi bawah; mode gelap sistem.
 - `assets/js/config.js` — konfigurasi publik (nama, versi, `API_BASE_URL`). Tanpa rahasia.
 - `assets/js/api.js` — klien POST `text/plain`; token sesi HANYA di memori (D1).
 - `assets/js/app.js` — status jaringan, status backend (health check), registrasi SW.
@@ -39,6 +41,9 @@ Google Apps Script Web App  (doGet/doPost; satu-satunya lapisan tepercaya)
   mode/sumber/status, kartu rekapitulasi + tabel harian, tabel rincian
   berpaginasi, ekspor CSV via Blob (nama berkas divalidasi); tampil hanya bila
   peran `admin`; panel disembunyikan saat tab admin lain aktif.
+- `assets/js/nav.js` — controller navigasi UI (UI 0.6.0): perpindahan antar
+  tampilan + visibilitas bilah bawah (item Admin hanya untuk peran `admin`);
+  TIDAK menyentuh otorisasi (tetap di backend).
 - `assets/icons/` — ikon placeholder netral, dibuat `tools/generate-icons.mjs`.
 
 ## Struktur Backend (aktual PHASE 5)

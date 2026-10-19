@@ -369,3 +369,44 @@ Belum diverifikasi (terblokir lingkungan/konfigurasi):
 Status rilis: **BELUM SIAP RILIS** (lihat laporan akhir PHASE 6) — frontend & backend
 sudah ter-deploy/terkonfigurasi (`backendConfigured:true`); menyisakan penyimpanan
 koordinat kantor (AMB-07) + uji integrasi/browser nyata.
+
+## Pasca-PHASE 6 — Rombak UI mobile (0.6.0) (2026-10-19)
+
+Permintaan pengguna: ubah antarmuka menjadi aplikasi profesional dengan
+tombol-tombol ala aplikasi mobile. Keputusan pengguna: **app shell + bottom nav**,
+tema **netral modern + aksen indigo**. Ini murni lapisan tampilan — **tidak ada
+perubahan logika bisnis, endpoint, atau aturan**.
+
+Dibuat:
+- `assets/js/nav.js` — controller navigasi: perpindahan tampilan
+  (Beranda/Absensi/Admin/Profil), visibilitas bilah bawah, item **Admin** hanya
+  untuk peran `admin`. Tidak menyentuh otorisasi (tetap di backend). Menangani
+  event `auth:login`/`auth:logout` dan memilih tab default Beranda.
+
+Diubah:
+- `index.html` — struktur app shell: app bar lengket (chip pengguna + tombol
+  keluar), `home-view` baru (hero + info + kartu status), semua tampilan sebagai
+  `.view`, bilah navigasi bawah (SVG ikon), `session-view` menjadi tab Profil.
+  **Seluruh ID & kelas yang dipakai JS dipertahankan**; ditambah `report-status`
+  (sebelumnya `report.js` menulis status ke elemen tak ada — pesan hilang).
+- `assets/css/styles.css` — ditulis ulang: token desain, app bar, kartu, tombol
+  besar, bilah bawah; `[hidden]{display:none!important}` (memperbaiki langkah
+  absensi yang bisa saling tampil karena `.att-step{display:flex}` mengalahkan
+  atribut `hidden`).
+- `assets/js/config.js` — VERSION `0.5.2` → `0.6.0`.
+- `service-worker.js` — `CACHE_VERSION` `app-v0.6.0` + `nav.js` di daftar aset.
+- `tests/check-foundation.mjs` — sertakan `nav.js` (struktur/sintaks/scan rahasia).
+- Dokumentasi: `README.md`, `docs/ARCHITECTURE.md`, `AGENTS.md`.
+
+Pengujian dijalankan (hasil apa adanya):
+- `node tests/check-foundation.mjs` → **67 lulus, 0 gagal** (naik dari 64).
+- `node tests/auth.test.mjs` 42/0; `attendance.test.mjs` 112/0; `admin.test.mjs`
+  156/0; `report.test.mjs` 162/0.
+- Verifikasi statis: seluruh ID yang dirujuk `app/auth/attendance/admin/report/nav`
+  ada di `index.html` (kecuali `susulan-catatan` yang dibuat dinamis oleh admin.js).
+
+Belum diverifikasi: tampilan nyata di browser/perangkat mobile (butuh perangkat);
+fungsi kamera/GPS/service worker tetap belum diuji runtime.
+
+Status: implementasi **selesai (lokal)**; uji browser nyata menyusul. Rilis tetap
+**BELUM SIAP RILIS** karena alasan konfigurasi/uji (lihat PHASE 6).

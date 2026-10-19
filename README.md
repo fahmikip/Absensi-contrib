@@ -7,7 +7,7 @@ Aplikasi absensi pegawai berbasis Progressive Web App (PWA).
 - **Database:** Google Sheets.
 - **Penyimpanan foto:** Google Drive privat.
 - **Zona waktu:** `Asia/Jakarta`.
-- **Versi aplikasi:** `0.5.2` (sumber: `assets/js/config.js`).
+- **Versi aplikasi:** `0.6.0` (sumber: `assets/js/config.js`).
 
 ## Status Proyek
 **PHASE 6 — QA rilis: selesai (lokal); BELUM SIAP RILIS.** Audit kode & keamanan
@@ -19,6 +19,12 @@ nyata: backend Apps Script ter-deploy & health check `ok:true` dengan
 (HTTP 200, versi 0.5.2). Rilis terblokir penyimpanan koordinat kantor di Script
 Properties (AMB-07) dan uji integrasi/browser nyata. Lihat `docs/PROGRESS.md`
 & `docs/DEPLOYMENT.md`.
+
+**UI 0.6.0 (mobile app):** antarmuka dirombak menjadi app shell — app bar lengket
++ **bilah navigasi bawah** (Beranda/Absensi/Admin/Profil), kartu, dan tombol besar
+ala aplikasi mobile; aksen indigo; mode gelap. `assets/js/nav.js` mengatur
+perpindahan tampilan (item Admin hanya untuk peran admin). Logika bisnis & seluruh
+ID/kelas yang dipakai modul lain tidak berubah.
 
 Rincian phase sebelumnya:
 **PHASE 5 — Laporan & Ekspor: selesai (lokal).** Halaman laporan admin (filter
@@ -36,7 +42,7 @@ index.html                  Halaman awal (status aplikasi/jaringan/backend/versi
 manifest.webmanifest        Manifest PWA
 service-worker.js           Cache aset statis (tanpa data privat)
 assets/
-  css/styles.css            Gaya dasar, responsif, mode gelap + form auth + panel admin + laporan
+  css/styles.css            Sistem desain mobile-first (app bar, kartu, nav bawah), mode gelap
   js/config.js              Konfigurasi PUBLIK (nama, versi, URL API)
   js/api.js                 Klien POST (token sesi hanya di memori)
   js/app.js                 Logika antarmuka (status jaringan/backend)
@@ -45,6 +51,7 @@ assets/
   js/attendance.js          Alur absensi (jenis/mode/GPS/foto/kirim)
   js/admin.js               Panel admin (pegawai/absensi/susulan/log audit)
   js/report.js              Tab laporan admin (filter, rekap, rincian, ekspor CSV)
+  js/nav.js                 Controller navigasi (bottom nav + perpindahan tampilan)
   icons/icon-192.png        Ikon placeholder (bukan logo resmi)
   icons/icon-512.png
 gas/
