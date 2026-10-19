@@ -178,5 +178,36 @@ check('tidak ada NIP/data pegawai fiktif di frontend', () => {
   return true;
 });
 
+console.log('== Regresi perbaikan PHASE 6 ==');
+check('attendance.js: stage dipulihkan sebelum menonaktifkan ulang tombol kirim', () => {
+  const src = readFileSync(abs('assets/js/attendance.js'), 'utf8');
+  const restore = src.indexOf("if (flow.stage === 'sending') flow.stage = 'summary';");
+  const enable = src.indexOf("if (submitBtn && flow.stage === 'summary') submitBtn.disabled = false;");
+  if (restore === -1 || enable === -1) throw new Error('pola pemulihan tidak ditemukan');
+  if (restore > enable) throw new Error('urutan terbalik: tombol dinonaktifkan sebelum stage dipulihkan');
+  return true;
+});
+check('attendance.js: showStage(summary) menonaktifkan-aktifkan kembali att-submit', () => {
+  const src = readFileSync(abs('assets/js/attendance.js'), 'utf8');
+  const m = src.match(/if \(name === 'summary'\) \{[\s\S]{0,300}?att-submit[\s\S]{0,120}?disabled = false;/);
+  if (!m) throw new Error('pola aktifkan-att-submit di showStage tidak ditemukan');
+  return true;
+});
+check('auth.js: menangani auth:session-lost (bersihkan token & sesi lokal)', () => {
+  const src = readFileSync(abs('assets/js/auth.js'), 'utf8');
+  if (!/addEventListener\('auth:session-lost'/.test(src)) throw new Error('listener auth:session-lost tidak ada');
+  if (!/api\.clearToken\(\)/.test(src)) throw new Error('panggilan clearToken tidak ada');
+  return true;
+});
+check('versi config.js == CACHE_VERSION service-worker.js', () => {
+  const cfg = readFileSync(abs('assets/js/config.js'), 'utf8');
+  const sw = readFileSync(abs('service-worker.js'), 'utf8');
+  const v = (cfg.match(/VERSION:\s*'([^']+)'/) || [])[1];
+  const c = (sw.match(/CACHE_VERSION\s*=\s*'([^']+)'/) || [])[1];
+  if (!v || !c) throw new Error('versi tidak ditemukan');
+  if (c !== 'app-v' + v) throw new Error('config VERSION=' + v + ' tapi SW CACHE_VERSION=' + c);
+  return true;
+});
+
 console.log('\n== Ringkasan: ' + passed + ' lulus, ' + failed + ' gagal ==');
 process.exit(failed === 0 ? 0 : 1);

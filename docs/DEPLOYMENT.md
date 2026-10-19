@@ -1,6 +1,6 @@
 # DEPLOYMENT — Konfigurasi & Deployment
 
-> Status: **PHASE 2 (autentikasi).** Langkah di bawah sesuai berkas di repo.
+> Status: **PHASE 6 (QA rilis).** Langkah di bawah sesuai berkas di repo.
 > Jangan menaruh nilai rahasia (ID resource, PIN, token) di repositori.
 > Nilai yang belum tersedia ditandai **BELUM DIKONFIGURASI** / **BELUM DITETAPKAN**.
 
@@ -65,7 +65,9 @@ tetap wajib memverifikasi identitas & peran di backend.
 3. Bila `backendConfigured: false`, properti `SPREADSHEET_ID`/`DRIVE_FOLDER_ID`
    belum diisi.
 4. Uji login dengan akun admin hasil `seedAdmin()`.
-   **Belum dijalankan** (menunggu `SPREADSHEET_ID`, DEC-P08).
+   **Status verifikasi PHASE 6 (2026-10-19):** health check merespons `ok:true`,
+   `phase:report`, `backendConfigured:false`. Uji login/absensi/laporan penuh
+   **belum dijalankan** (menunggu `SPREADSHEET_ID`, DEC-P08).
 
 ## F. Deploy Frontend ke GitHub Pages
 1. Push repositori (tanpa berkas rahasia; lihat `.gitignore`).
@@ -73,7 +75,8 @@ tetap wajib memverifikasi identitas & peran di backend.
 3. Seluruh path aset memakai referensi relatif (`./...`) sehingga kompatibel
    dengan sub-path repositori (`https://<user>.github.io/<repo>/`).
 4. Verifikasi URL halaman `.html` termuat dan service worker terdaftar.
-   **Belum diuji di GitHub Pages sebenarnya** (lihat laporan PHASE 1).
+   **Status verifikasi PHASE 6 (2026-10-19):** `GET https://kipasel.github.io/Absensi/`
+   → **404**; endpoint Pages API → 404 (Pages aktif). Frontend **belum ter-deploy**.
 
 ## G. Memisahkan Lingkungan Uji dan Produksi
 - Gunakan Spreadsheet, folder Drive, dan proyek Apps Script **terpisah** untuk uji

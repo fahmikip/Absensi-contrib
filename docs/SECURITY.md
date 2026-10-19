@@ -138,3 +138,53 @@ Belum / belum terverifikasi (PHASE 5):
 - Perilaku pada volume data besar (query penuh per rentang tanpa indeks khusus).
 - Pembatasan rate/kuota khusus endpoint laporan (hanya kuota platform).
 - Review independen terhadap logika filter & rekap.
+
+## Audit Keamanan PHASE 6 (2026-10-19)
+Dilakukan pada commit `6fc4292` (sebelum perbaikan) dengan pembacaan seluruh
+kode backend & frontend, bukan hanya tes otomatis. Hasil:
+
+Kontrol yang terverifikasi (lulus audit kode):
+- **Otorisasi server:** seluruh aksi non-health melalui `requirePost_`; aksi
+  admin/laporan tambahan `requireAdmin_` (peran dari sesi server, bukan klien).
+  Token hanya diterima dari BODY (`Code.gs`), query string diabaikan.
+- **Tanpa rahasia di klien:** `config.js` hanya memuat URL publik; tanpa
+  `localStorage`/`sessionStorage`/cookie; token hanya di variabel modul `api.js`.
+- **Anti-XSS:** tidak ada `innerHTML`/`eval`/`document.write` di frontend; semua
+  render data server memakai `textContent`.
+- **Tanpa kebocoran log:** audit seluruh `Logger.log`/`console.*` — tidak ada
+  PIN, token, `pin_hash`, atau data pribadi yang dicetak.
+- **Health check minimal:** `handleHealth_` hanya mengembalikan status konfigurasi
+  & waktu, tanpa data privat.
+- **Service worker:** hanya meng-cache aset statis same-origin; permintaan
+  lintas-origin (backend Apps Script) diteruskan ke jaringan, tidak di-cache.
+- **Secret scan repo:** regex (private key, AWS/Google API key, bearer,
+  literal pin/password) + pola NIP 18 digit → bersih di berkas frontend.
+- **Verifikasi runtime non-destruktif:** `health` → `ok:true`, `phase:report`,
+  `backendConfigured:false`; `POST login` (kredensial sintetis) →
+  `NOT_CONFIGURED` — tidak ada kebocoran data/stack trace.
+
+Perbaikan bug frontend PHASE 6 (bukan celah keamanan, tapi integritas alur):
+1. `attendance.js` — tombol "Kirim absensi" tidak diaktifkan kembali setelah
+   kegagalan (urutan pemulihan `stage`/`disabled` terbalik) → retry idempoten
+   (termasuk jalur `ATTENDANCE_STORAGE_PARTIAL`) tidak dapat dilakukan.
+2. `attendance.js` — `att-submit` tidak di-reset saat `showStage('summary')`
+   sehingga state `disabled` lama dapat memblokir pengiriman berikutnya.
+3. `auth.js` — event `auth:session-lost` tidak ditangani; token & tampilan sesi
+   tetap aktif setelah server menolak sesi. Kini `clearToken()` +
+   `renderLoggedOut()`. Regression check statis ditambahkan di
+   `check-foundation.mjs` (versi 0.5.1).
+
+Risiko yang masih DIAKUI (belum dapat dihilangkan, dicatat apa adanya):
+- Tanpa cookie `HttpOnly` (keterbatasan Apps Script) → token di memori; XSS
+  teoretis tetap berarti pencurian token. Mitigasi: tanpa `innerHTML`, tetapi
+  TIDAK ada CSP/`Trusted Types`.
+- PBKDF2 kustom belum diaudit & iterasi 10000 belum di-benchmark (D2).
+- Belum ada rate limiting khusus aplikasi (hanya kuota platform & lockout login).
+- Belum ada review keamanan independen/pihak ketiga.
+- `executeAs: USER_DEPLOYING` + `access: ANYONE_ANONYMOUS` (D8) → siapa pun yang
+  memiliki URL dapat memanggil endpoint; keamanan bergantung pada verifikasi
+  token di setiap aksi (sudah diterapkan).
+
+Kesimpulan audit: tidak ditemukan celah autentikasi/otorisasi/kebocoran rahasia
+yang tidak diketahui. Rilis tetap terblokir oleh **konfigurasi**, bukan kerentanan
+baru: `SPREADSHEET_ID` (DEC-P08), koordinat kantor (AMB-07), benchmark PBKDF2 (D2).

@@ -32,10 +32,10 @@ Google Apps Script → Google Sheets + Google Drive privat. Zona waktu `Asia/Jak
 - Perubahan sekecil mungkin; jangan refactor tak berkaitan.
 
 ## Status Saat Ini
-- PHASE 0–5 dikerjakan. PHASE 3 (mesin absensi), PHASE 4 (panel admin) &
-  PHASE 5 (laporan & ekspor) **selesai (lokal)** — implementasi + uji Node
-  lulus; integrasi runtime Apps Script & pengujian browser belum. Lihat
-  `docs/PROGRESS.md`.
+- PHASE 0–6 dikerjakan. PHASE 3 (mesin absensi), PHASE 4 (panel admin),
+  PHASE 5 (laporan & ekspor) **selesai (lokal)**. PHASE 6 (QA rilis) **selesai
+  (lokal)**: audit kode & keamanan, 3 perbaikan frontend, verifikasi runtime.
+  Keputusan rilis: **BELUM SIAP RILIS** (lihat `docs/PROGRESS.md` PHASE 6).
 - Keputusan D0–D8 sudah dijawab pengguna (lihat `docs/DECISIONS.md` DEC-P09..P16);
   aturan waktu & foto: DEC-P17/P18; ekspor **CSV saja** + laporan = admin:
   DEC-P07 (AMB-19 ANSWERED).
@@ -63,7 +63,7 @@ Google Apps Script → Google Sheets + Google Drive privat. Zona waktu `Asia/Jak
 - Indikator kebijakan laporan (terlambat, tidak hadir, persentase kehadiran,
   hari kerja efektif) → **BELUM DITETAPKAN**; jangan ditambahkan sendiri.
 - Koordinat kantor (AMB-07) → memblokir validasi GPS WFO (PHASE 3).
-- Jangan mulai PHASE 6 tanpa instruksi.
+- Jangan mulai PHASE 7 (atau fitur baru) tanpa instruksi; PHASE 6 sudah STOP.
 
 ## Catatan Runtime (2026-10-19)
 - `API_BASE_URL` terisi & dikonfirmasi pengguna (DEC-P19; FD-09 berubah →

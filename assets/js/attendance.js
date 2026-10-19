@@ -89,7 +89,13 @@
     if (name === 'select') show(el('att-step-select'));
     if (name === 'camera') show(el('att-step-camera'));
     if (name === 'location') show(el('att-step-location'));
-    if (name === 'summary') show(el('att-step-summary'));
+    if (name === 'summary') {
+      show(el('att-step-summary'));
+      // Pastikan tombol kirim aktif: state disabled bisa tersisa dari
+      // percobaan gagal/sebelumnya dan memblokir pengiriman berikutnya.
+      var submitBtn = el('att-submit');
+      if (submitBtn) submitBtn.disabled = false;
+    }
   }
 
   function selectedValue(name) {
@@ -295,8 +301,11 @@
         '"Kirim absensi" lagi; permintaan ulang dengan ID yang sama tidak akan ' +
         'menghasilkan absensi ganda.', 'error');
     }).then(function () {
-      if (submitBtn && flow.stage === 'summary') submitBtn.disabled = false;
+      // Pulihkan status DULU baru aktifkan tombol: pada jalur gagal stage masih
+      // 'sending' sehingga urutan lama mematikan tombol kirim secara permanen
+      // (perbaikan bug PHASE 6 — retry setelah kegagalan harus tetap bisa).
       if (flow.stage === 'sending') flow.stage = 'summary';
+      if (submitBtn && flow.stage === 'summary') submitBtn.disabled = false;
     });
   }
 

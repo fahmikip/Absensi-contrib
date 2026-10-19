@@ -152,6 +152,23 @@ BUKAN runtime Apps Script. Data uji sintetis berlabel `TEST`.
 | RP-16 | Unduhan Blob CSV di browser (nama berkas, isi) | BELUM DIJALANKAN |
 | RP-17 | Otorisasi & data laporan pada Web App nyata (runtime Apps Script) | BELUM DIJALANKAN |
 
+## 8b. PHASE 6 — QA rilis (2026-10-19) — otomatis + verifikasi runtime
+Dijalankan: `node tests/check-foundation.mjs` (64 cek), `auth` (42),
+`attendance` (112), `admin` (156), `report` (162) — semua LULUS. Verifikasi
+runtime non-destruktif terhadap Web App ter-deploy & GitHub Pages.
+| ID | Kasus | Hasil |
+|----|-------|-------|
+| QA-01 | Regresi: urutan pemulihan stage/`disabled` di `submitAttendance` | LULUS (statis) |
+| QA-02 | Regresi: `att-submit` di-reset saat `showStage('summary')` | LULUS (statis) |
+| QA-03 | Regresi: `auth.js` menangani `auth:session-lost` (`clearToken`) | LULUS (statis) |
+| QA-04 | Konsistensi `config.VERSION` == `CACHE_VERSION` service worker | LULUS (statis) |
+| QA-05 | Health live Web App: `GET ?action=health` → `ok:true`, `phase:report` | LULUS (runtime) |
+| QA-06 | Login live dengan kredensial sintetis → `NOT_CONFIGURED` (tanpa kebocoran) | LULUS (runtime) |
+| QA-07 | GitHub Pages `GET https://kipasel.github.io/Absensi/` | **404 — frontend belum ter-deploy** |
+| QA-08 | Uji browser nyata (kamera/GPS/SW/unduh CSV) | BELUM DIJALANKAN (butuh perangkat + Pages aktif) |
+| QA-09 | Integrasi runtime penuh (login/absensi/laporan) | BELUM DIJALANKAN (butuh `SPREADSHEET_ID`, DEC-P08) |
+| QA-10 | Benchmark PBKDF2 di runtime Apps Script (D2) | BELUM DIJALANKAN (butuh Sheets) |
+
 ## 9. Yang BELUM Diuji
 - Kasus laporan RP-15/RP-16/RP-17 (browser & runtime) — baru otomatis Node.
 - Kasus panel admin AD-18/AD-19 (browser & runtime) — baru otomatis Node.

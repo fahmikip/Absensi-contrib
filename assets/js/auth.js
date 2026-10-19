@@ -134,6 +134,12 @@
     if (logoutBtn) {
       logoutBtn.addEventListener('click', onLogout);
     }
+    // Backend menolak sesi (kedaluwarsa/dicabut): bersihkan sesi lokal
+    // agar UI tidak tetap menampilkan status "masuk" yang sudah tidak valid.
+    document.addEventListener('auth:session-lost', function () {
+      api.clearToken();
+      renderLoggedOut();
+    });
     renderLoggedOut();
   }
 

@@ -9,7 +9,7 @@
 | 3 | Mesin absensi | Selesai — implementasi, validasi & uji lokal (112 cek) |
 | 4 | Panel admin | Selesai (lokal) — endpoint admin, panel UI, uji lokal (156 cek); integrasi runtime & browser belum |
 | 5 | Laporan | Selesai (lokal) — endpoint laporan/rekap/ekspor CSV, UI tab Laporan, uji lokal (162 cek); integrasi runtime & browser belum |
-| 6 | Pengujian & rilis | Belum dimulai |
+| 6 | Pengujian & rilis | Selesai (lokal) — audit kode & keamanan, 3 perbaikan frontend, verifikasi runtime; rilis terblokir konfigurasi |
 
 ## PHASE 0 — Audit Kebutuhan (2026-10-15)
 - Pemeriksaan workspace → kosong (proyek baru, bukan repo git).
@@ -299,3 +299,60 @@ Belum dijalankan / belum terverifikasi:
 - Performa laporan pada volume data besar (query penuh per rentang).
 
 Status: **SELESAI (lokal)** — jangan mulai PHASE 6 tanpa instruksi.
+
+## PHASE 6 — Pengujian & QA Rilis (2026-10-19)
+
+Ruang lingkup: audit fungsional & keamanan, perbaikan bug reproducible, verifikasi
+deployment nyata, dokumentasi rilis. Tanpa fitur baru; tanpa perubahan stack.
+
+Baseline (commit `6fc4292`, sebelum perubahan): `check-foundation` 60/0, `auth` 42/0,
+`attendance` 112/0, `admin` 156/0, `report` 162/0.
+
+Audit dilakukan (hasil):
+- Review seluruh backend (`Code/Config/Auth/Repo/AuthService/Bootstrap/TimeRule/
+  Geo/Drive/Attendance/AdminService/ReportService.gs`) & frontend
+  (`config/api/app/auth/camera/attendance/admin/report.js`, `index.html`,
+  `manifest.webmanifest`, `service-worker.js`, `tools/generate-icons.mjs`).
+- Secret scan repo (regex rahasia + NIP 18 digit) → bersih; tanpa `innerHTML`,
+  `eval`, `localStorage`/`sessionStorage` di frontend.
+- Audit `Logger.log` → tidak mencetak PIN/token/kredensial.
+- Verifikasi runtime non-destruktif (lihat di bawah).
+
+**3 bug frontend reproducible ditemukan & diperbaiki** (assets/js/attendance.js,
+assets/js/auth.js; versi 0.5.0 → 0.5.1 + `service-worker.js`):
+1. `submitAttendance` — urutan pemulihan terbalik: `disabled` dicek saat stage masih
+   `'sending'` sehingga tombol Kirim tidak pernah diaktifkan kembali setelah gagal
+   (retry jadi mustahil tanpa reload). Kini stage dipulihkan dulu, baru tombol
+   diaktifkan.
+2. `showStage('summary')` — `att-submit` tidak di-reset saat kembali ke ringkasan
+   (state `disabled` lama bisa tertinggal & memblokir pengiriman baru). Kini di-reset.
+3. `auth.js` — tidak menangani `auth:session-lost`: token & panel sesi tetap terbuka
+   walau server menolak sesi. Kini `clearToken()` + `renderLoggedOut()` dipanggil.
+
+Regression check ditambahkan ke `check-foundation.mjs` (4 cek: urutan pemulihan,
+reset att-submit, listener session-lost, kesesuaian versi config vs SW cache).
+
+Verifikasi runtime non-destruktif (2026-10-19):
+- `GET <API_BASE_URL>?action=health` → `200 {"ok":true,"phase":"report",
+  "timezone":"Asia/Jakarta","backendConfigured":false,"officeLocationConfigured":false,
+  "serverTime":"2026-10-19T05:41:23.688Z"}` — Web App ter-deploy & menjalankan kode
+  PHASE 5; `SPREADSHEET_ID`/`DRIVE_FOLDER_ID` belum diisi (DEC-P08 menunggu).
+- `POST action=login` (NIP/PIN sintetis non-destruktif) → `NOT_CONFIGURED`
+  ("Spreadsheet belum dikonfigurasi") — konsisten; tidak ada kebocoran data.
+- GitHub Pages: `GET https://kipasel.github.io/Absensi/` → **404**; API GitHub
+  `/repos/kipasel/Absensi/pages` → 404 (Pages aktif). **Frontend belum ter-deploy.**
+
+Pengujian dijalankan (hasil apa adanya; suite backend tak tersentuh perbaikan):
+- `node tests/check-foundation.mjs` → **64 lulus, 0 gagal** (sebelumnya 60).
+- `node tests/auth.test.mjs` → 42/0; `node tests/attendance.test.mjs` → 112/0;
+  `node tests/admin.test.mjs` → 156/0; `node tests/report.test.mjs` → 162/0.
+
+Belum diverifikasi (terblokir lingkungan/konfigurasi):
+- Uji browser nyata (kamera/GPS/PWA/SW/unduh CSV) — perlu perangkat & Pages aktif.
+- Integrasi runtime penuh (login/absensi/laporan nyata) — butuh `SPREADSHEET_ID`
+  (DEC-P08), `DRIVE_FOLDER_ID`, koordinat kantor (AMB-07).
+- Benchmark PBKDF2 di runtime Apps Script (D2); reset PIN (D5); kuota & konkurensi
+  LockService nyata.
+
+Status rilis: **BELUM SIAP RILIS** (lihat laporan akhir PHASE 6) — terblokir
+konfigurasi kritis (DEC-P08, AMB-07) + frontend belum ter-deploy ke GitHub Pages.
