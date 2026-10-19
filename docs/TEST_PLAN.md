@@ -164,7 +164,7 @@ runtime non-destruktif terhadap Web App ter-deploy & GitHub Pages.
 | QA-04 | Konsistensi `config.VERSION` == `CACHE_VERSION` service worker | LULUS (statis) |
 | QA-05 | Health live Web App: `GET ?action=health` → `ok:true`, `phase:report` | LULUS (runtime) |
 | QA-06 | Login live dengan kredensial sintetis → `NOT_CONFIGURED` (tanpa kebocoran) | LULUS (runtime) |
-| QA-07 | GitHub Pages `GET https://kipasel.github.io/Absensi/` | **404 — frontend belum ter-deploy** |
+| QA-07 | GitHub Pages `GET https://kipasel.github.io/Absensi/` (+ aset) | LULUS (runtime) — 200, versi 0.5.1 |
 | QA-08 | Uji browser nyata (kamera/GPS/SW/unduh CSV) | BELUM DIJALANKAN (butuh perangkat + Pages aktif) |
 | QA-09 | Integrasi runtime penuh (login/absensi/laporan) | BELUM DIJALANKAN (butuh `SPREADSHEET_ID`, DEC-P08) |
 | QA-10 | Benchmark PBKDF2 di runtime Apps Script (D2) | BELUM DIJALANKAN (butuh Sheets) |

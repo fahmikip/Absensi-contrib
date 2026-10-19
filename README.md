@@ -15,9 +15,10 @@ dilakukan; 3 bug frontend diperbaiki (retry absensi, reset tombol kirim, penanga
 sesi kedaluwarsa); seluruh suite uji lokal lulus (64/42/112/156/162). Verifikasi
 nyata: backend Apps Script ter-deploy & health check `ok:true` (tapi
 `backendConfigured:false` — `SPREADSHEET_ID` belum diisi, DEC-P08); **GitHub Pages
-belum aktif** (frontend 404, belum ter-deploy). Rilis terblokir konfigurasi kritis
-(`SPREADSHEET_ID`, `DRIVE_FOLDER_ID`, koordinat kantor AMB-07) dan pengerjaan
-langkah deployment. Lihat `docs/PROGRESS.md` & `docs/DEPLOYMENT.md`.
+sudah aktif** — frontend live di `https://kipasel.github.io/Absensi/` (HTTP 200,
+versi 0.5.1), tetapi uji browser nyata belum dijalankan. Rilis terblokir
+konfigurasi kritis (`SPREADSHEET_ID`, `DRIVE_FOLDER_ID`, koordinat kantor AMB-07).
+Lihat `docs/PROGRESS.md` & `docs/DEPLOYMENT.md`.
 
 Rincian phase sebelumnya:
 **PHASE 5 — Laporan & Ekspor: selesai (lokal).** Halaman laporan admin (filter

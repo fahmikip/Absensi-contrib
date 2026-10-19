@@ -339,8 +339,9 @@ Verifikasi runtime non-destruktif (2026-10-19):
   PHASE 5; `SPREADSHEET_ID`/`DRIVE_FOLDER_ID` belum diisi (DEC-P08 menunggu).
 - `POST action=login` (NIP/PIN sintetis non-destruktif) → `NOT_CONFIGURED`
   ("Spreadsheet belum dikonfigurasi") — konsisten; tidak ada kebocoran data.
-- GitHub Pages: `GET https://kipasel.github.io/Absensi/` → **404**; API GitHub
-  `/repos/kipasel/Absensi/pages` → 404 (Pages aktif). **Frontend belum ter-deploy.**
+- GitHub Pages: **diaktifkan** (branch `master`, root `/`); build `built`;
+  `GET https://kipasel.github.io/Absensi/` → **200** dan aset
+  (`config.js`/`service-worker.js`/`manifest.webmanifest`) → 200 (versi 0.5.1).
 
 Pengujian dijalankan (hasil apa adanya; suite backend tak tersentuh perbaikan):
 - `node tests/check-foundation.mjs` → **64 lulus, 0 gagal** (sebelumnya 60).
@@ -355,4 +356,5 @@ Belum diverifikasi (terblokir lingkungan/konfigurasi):
   LockService nyata.
 
 Status rilis: **BELUM SIAP RILIS** (lihat laporan akhir PHASE 6) — terblokir
-konfigurasi kritis (DEC-P08, AMB-07) + frontend belum ter-deploy ke GitHub Pages.
+konfigurasi kritis (DEC-P08, AMB-07). Frontend **sudah ter-deploy** ke GitHub Pages
+(200); uji browser nyata tetap belum dijalankan.

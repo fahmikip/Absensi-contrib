@@ -75,8 +75,10 @@ tetap wajib memverifikasi identitas & peran di backend.
 3. Seluruh path aset memakai referensi relatif (`./...`) sehingga kompatibel
    dengan sub-path repositori (`https://<user>.github.io/<repo>/`).
 4. Verifikasi URL halaman `.html` termuat dan service worker terdaftar.
-   **Status verifikasi PHASE 6 (2026-10-19):** `GET https://kipasel.github.io/Absensi/`
-   → **404**; endpoint Pages API → 404 (Pages aktif). Frontend **belum ter-deploy**.
+   **Status verifikasi PHASE 6 (2026-10-19):** Pages diaktifkan (branch `master`,
+   root `/`). `GET https://kipasel.github.io/Absensi/` → **200**; aset
+   `config.js`/`service-worker.js`/`manifest.webmanifest` → 200; versi tersaji
+   `0.5.1`. Uji browser nyata (kamera/GPS/SW) **belum dijalankan**.
 
 ## G. Memisahkan Lingkungan Uji dan Produksi
 - Gunakan Spreadsheet, folder Drive, dan proyek Apps Script **terpisah** untuk uji
