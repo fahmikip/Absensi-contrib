@@ -333,19 +333,25 @@ Regression check ditambahkan ke `check-foundation.mjs` (4 cek: urutan pemulihan,
 reset att-submit, listener session-lost, kesesuaian versi config vs SW cache).
 
 Verifikasi runtime non-destruktif (2026-10-19):
-- `GET <API_BASE_URL>?action=health` → `200 {"ok":true,"phase":"report",
+- `GET <API_BASE_URL>?action=health` (URL awal) → `200 {"ok":true,"phase":"report",
   "timezone":"Asia/Jakarta","backendConfigured":false,"officeLocationConfigured":false,
-  "serverTime":"2026-10-19T05:41:23.688Z"}` — Web App ter-deploy & menjalankan kode
-  PHASE 5; `SPREADSHEET_ID`/`DRIVE_FOLDER_ID` belum diisi (DEC-P08 menunggu).
-- `POST action=login` (NIP/PIN sintetis non-destruktif) → `NOT_CONFIGURED`
-  ("Spreadsheet belum dikonfigurasi") — konsisten; tidak ada kebocoran data.
+  "serverTime":"2026-10-19T05:41:23.688Z"}`.
+- `POST action=login` (NIP/PIN sintetis non-destruktif) pada URL awal →
+  `NOT_CONFIGURED` ("Spreadsheet belum dikonfigurasi") — konsisten; tanpa kebocoran.
 - GitHub Pages: **diaktifkan** (branch `master`, root `/`); build `built`;
   `GET https://kipasel.github.io/Absensi/` → **200** dan aset
-  (`config.js`/`service-worker.js`/`manifest.webmanifest`) → 200 (versi 0.5.1).
+  (`config.js`/`service-worker.js`/`manifest.webmanifest`) → 200.
 - Pembaruan API (2026-10-19): pengguna memberikan URL Web App baru; `config.js`
   `API_BASE_URL` diperbarui (DEC-P19) dan versi dinaikkan `0.5.1` → `0.5.2`
   (bersama `CACHE_VERSION`) agar service worker menarik `config.js` terbaru.
-  Pengujian fondasi tetap 64/0 (FD-09 format URL valid + versi selaras).
+- Verifikasi URL baru: `GET ?action=health` → `backendConfigured:true`
+  (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID` kini terisi — DEC-P08/DEC-P20),
+  `officeLocationConfigured:false` (koordinat AMB-07 belum disimpan). Probe
+  `POST action=login` (NIP sintetis) → `AUTH_FAILED` (bukan `NOT_CONFIGURED`)
+  → sheet `Akun` sudah ada (initializeSheets pernah dijalankan). Pengujian
+  fondasi tetap 64/0 (FD-09 format URL valid + versi selaras).
+- Koordinat kantor (AMB-07): pengguna menetapkan titik & radius 50 m
+  (DEC-P20); nilai disimpan di Script Properties, **tidak** di repo.
 
 Pengujian dijalankan (hasil apa adanya; suite backend tak tersentuh perbaikan):
 - `node tests/check-foundation.mjs` → **64 lulus, 0 gagal** (sebelumnya 60).
@@ -353,12 +359,13 @@ Pengujian dijalankan (hasil apa adanya; suite backend tak tersentuh perbaikan):
   `node tests/admin.test.mjs` → 156/0; `node tests/report.test.mjs` → 162/0.
 
 Belum diverifikasi (terblokir lingkungan/konfigurasi):
-- Uji browser nyata (kamera/GPS/PWA/SW/unduh CSV) — perlu perangkat & Pages aktif.
-- Integrasi runtime penuh (login/absensi/laporan nyata) — butuh `SPREADSHEET_ID`
-  (DEC-P08), `DRIVE_FOLDER_ID`, koordinat kantor (AMB-07).
+- Uji browser nyata (kamera/GPS/PWA/SW/unduh CSV) — perlu perangkat.
+- Integrasi runtime penuh dengan akun nyata (login admin/pegawai, absensi, laporan):
+  backend & sheet sudah terkonfigurasi; menyisakan koordinat kantor disimpan di
+  Script Properties (AMB-07/DEC-P20), `seedAdmin()`, uji WFO, dan `initializeSheets`.
 - Benchmark PBKDF2 di runtime Apps Script (D2); reset PIN (D5); kuota & konkurensi
   LockService nyata.
 
-Status rilis: **BELUM SIAP RILIS** (lihat laporan akhir PHASE 6) — terblokir
-konfigurasi kritis (DEC-P08, AMB-07). Frontend **sudah ter-deploy** ke GitHub Pages
-(200); uji browser nyata tetap belum dijalankan.
+Status rilis: **BELUM SIAP RILIS** (lihat laporan akhir PHASE 6) — frontend & backend
+sudah ter-deploy/terkonfigurasi (`backendConfigured:true`); menyisakan penyimpanan
+koordinat kantor (AMB-07) + uji integrasi/browser nyata.

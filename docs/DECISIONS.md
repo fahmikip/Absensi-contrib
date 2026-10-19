@@ -54,12 +54,12 @@
 |----|---------|---------------------------|--------|
 | DEC-P01 | AMB-21 | Visibilitas Web App & strategi CORS/token | MENUNGGU |
 | DEC-P02 | AMB-03/04/05 | Mekanisme PIN, hash, lockout, sesi | MENUNGGU |
-| DEC-P03 | AMB-07 | Nilai koordinat kantor | MENUNGGU |
+| DEC-P03 | AMB-07 | Nilai koordinat kantor | DISETUJUI 2026-10-19 (lihat DEC-P20) |
 | DEC-P04 | AMB-15/16/17 | Skema data & format waktu | MENUNGGU |
 | DEC-P05 | AMB-11/12 | Aturan susulan | MENUNGGU |
 | DEC-P06 | AMB-18 | Retensi data | MENUNGGU |
 | DEC-P07 | AMB-19 | Laporan & ekspor | DISETUJUI 2026-10-19 |
-| DEC-P08 | AMB-23 | Nilai konfigurasi resource | MENUNGGU (sebagian: URL deployment dikonfirmasi via DEC-P19; `SPREADSHEET_ID`/`DRIVE_FOLDER_ID` belum) |
+| DEC-P08 | AMB-23 | Nilai konfigurasi resource | DISETUJUI 2026-10-19 (nilai di Script Properties; tidak di repo — `backendConfigured:true`) |
 | DEC-P09 | AMB-05 | **D1** penyimpanan token sesi (memori/sessionStorage/localStorage/ubah arsitektur) | DISETUJUI 2026-10-15 |
 | DEC-P10 | AMB-03 | **D2** metode penyimpanan & verifikasi PIN (PBKDF2 buatan sendiri / SHA-256+lockout / layanan eksternal) | DISETUJUI 2026-10-15 |
 | DEC-P11 | AMB-04 | **D3** ambang & durasi lockout | DISETUJUI 2026-10-15 |
@@ -185,3 +185,22 @@ Sumber: jawaban pengguna atas pertanyaan D0–D8 (lihat `docs/PHASE2_AUDIT.md`).
     Properties (`backendConfigured:false`); jangan mengarang nilai.
 - Sumber: instruksi pengguna (menyertakan URL API & pembaruan URL), cek langsung
   endpoint.
+
+### DEC-P20 — Lokasi kantor & konfigurasi resource (AMB-07, AMB-23)
+- Tanggal: 2026-10-19; Status: DISETUJUI (data dari pengguna).
+- Keputusan:
+  - **AMB-07 ANSWERED:** pengguna menetapkan titik kantor
+    (`OFFICE_LATITUDE`, `OFFICE_LONGITUDE`) dan radius `OFFICE_RADIUS_METERS`
+    = **50 meter** (sesuai DEC-004). Nilai koordinat disimpan di **Script
+    Properties** dan **tidak di-commit ke repositori** (kebijakan
+    `docs/DEPLOYMENT.md` §A). Dengan terisinya nilai ini,
+    `officeLocationConfigured` menjadi `true` dan validasi GPS WFO aktif.
+  - **DEC-P08 / AMB-23 (sebagian):** `SPREADSHEET_ID` & `DRIVE_FOLDER_ID` telah
+    diisi di Script Properties — health check melaporkan `backendConfigured:true`
+    (2026-10-19). Nilai resource tidak di-commit (kebijakan §A). Sheet `Akun`
+    terverifikasi ada (probe login menjawab `AUTH_FAILED`, bukan
+    `NOT_CONFIGURED`).
+- Yang masih pending: benchmark iterasi PBKDF2 (D2), penerbitan/reset PIN (D5),
+  aturan susulan (AMB-11/12), akses foto admin (AMB-20), impor (AMB-14),
+  retensi (AMB-18), notifikasi (AMB-25), indikator kebijakan laporan.
+- Sumber: instruksi pengguna 2026-10-19 (koordinat + radius 50 m), health check.

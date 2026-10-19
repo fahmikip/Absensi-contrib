@@ -14,7 +14,7 @@ Legenda status: `OPEN` (belum dijawab) · `ANSWERED` (dijawab) · `DEFERRED` (se
 | AMB-04 | Anti brute-force | Jumlah percobaan gagal yang diizinkan, durasi lockout, cakupan (per akun/per IP)? | 2 | OPEN |
 | AMB-05 | Sesi & token | Mekanisme sesi antar-request (Apps Script tanpa sesi bawaan), tempat penyimpanan token di klien, masa berlaku, cara logout? | 2 | OPEN |
 | AMB-06 | Bootstrap admin | Siapa admin pertama dan bagaimana peran admin ditetapkan/diubah dengan aman? | 2 | OPEN |
-| AMB-07 | Koordinat kantor | Nilai latitude/longitude titik kantor (dinyatakan belum ditetapkan). Fitur validasi lokasi diblokir sampai ini diisi. | 3 | OPEN |
+| AMB-07 | Koordinat kantor | Nilai latitude/longitude titik kantor (dinyatakan belum ditetapkan). Fitur validasi lokasi diblokir sampai ini diisi. | 3 | ANSWERED 2026-10-19 (DEC-P20: titik & radius 50 m ditetapkan; nilai di Script Properties, tidak di repo) |
 | AMB-08 | Akurasi GPS | Toleransi `accuracy` GPS; perilaku bila akurasi rendah/tidak pasti; apakah butuh banyak sampel? | 3 | OPEN |
 | AMB-09 | Multi-lokasi | Apakah hanya satu titik kantor, atau boleh banyak titik/lokasi? | 3 | OPEN |
 | AMB-10 | Hari libur & akhir pekan | Apakah absensi pada hari libur/Sabtu-Minggu diizinkan? Sumber daftar libur (`HariLibur`) & aturannya? | 3 | OPEN |
@@ -30,7 +30,7 @@ Legenda status: `OPEN` (belum dijawab) · `ANSWERED` (dijawab) · `DEFERRED` (se
 | AMB-20 | Akses foto admin | Bagaimana admin melihat foto privat secara aman (tanpa tautan publik)? Ditampilkan inline, unduhan terproteksi? | 4 | OPEN |
 | AMB-21 | Visibilitas Web App | Deploy Apps Script sebagai "Execute as: Me" + "Who has access: Anyone" (perlu untuk PWA lintas-origin) atau "Anyone with Google account"? Implikasi CORS & keamanan. | 1 | OPEN |
 | AMB-22 | Ukuran & kompresi foto | Batas ukuran/kompresi foto; resolusi; batas payload base64 ke Apps Script; penanganan kegagalan unggah besar. | 3 | OPEN |
-| AMB-23 | Konfigurasi resource | Nilai `SPREADSHEET_ID`, `DRIVE_FOLDER_ID`, nama/URL repo GitHub, URL deployment Apps Script. | 1 | OPEN (sebagian: URL deployment dijawab DEC-P19; sisanya belum) |
+| AMB-23 | Konfigurasi resource | Nilai `SPREADSHEET_ID`, `DRIVE_FOLDER_ID`, nama/URL repo GitHub, URL deployment Apps Script. | 1 | ANSWERED 2026-10-19 (DEC-P19 URL; DEC-P20 `SPREADSHEET_ID`/`DRIVE_FOLDER_ID` diisi di Script Properties, `backendConfigured:true`) |
 | AMB-24 | Kuota & beban | Strategi menghadapi kuota Apps Script (waktu eksekusi 6 menit, trigger, limit harian) saat ramai. | 6 | OPEN |
 | AMB-25 | Notifikasi | Apakah diperlukan notifikasi (mis. ke admin saat ada pengajuan susulan)? (belum disebut sebagai kebutuhan). | 4 | OPEN |
 | AMB-26 | Akun nonaktif | Perilaku saat pegawai nonaktif mencoba login (pesan, penanganan riwayat). | 2 | OPEN |
@@ -40,7 +40,7 @@ Legenda status: `OPEN` (belum dijawab) · `ANSWERED` (dijawab) · `DEFERRED` (se
 | AMB-30 | Pemulihan bencana | Prosedur backup/restore Sheets & Drive; RPO/RTO; kepemilikan akun Google. | 6 | OPEN |
 
 ## Ringkasan Blocker Kritis (menghambat implementasi)
-1. **AMB-07 (koordinat kantor)** — memblokir seluruh validasi GPS WFO masuk (PHASE 3).
+1. ~~**AMB-07 (koordinat kantor)**~~ — ANSWERED 2026-10-19 (DEC-P20); tersisa mengisi nilai di Script Properties.
 2. **AMB-21 (visibilitas Web App + CORS)** — menentukan bentuk autentikasi/token dan seluruh komunikasi frontend↔backend (PHASE 1–2).
 3. **AMB-03/AMB-04/AMB-05 (PIN, lockout, sesi)** — memblokir PHASE 2.
 4. **AMB-15/AMB-16/AMB-17 (skema data & format waktu)** — memblokir PHASE 1.

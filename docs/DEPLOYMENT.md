@@ -42,11 +42,11 @@ tetap wajib memverifikasi identitas & peran di backend.
 4. Isi **Script Properties** (kolom Name/Value):
    | Kunci | Nilai |
    |-------|-------|
-   | `SPREADSHEET_ID` | **BELUM DIKONFIGURASI** (AMB-23 / DEC-P08) |
-   | `DRIVE_FOLDER_ID` | **BELUM DIKONFIGURASI** (AMB-23) |
-   | `OFFICE_LATITUDE` | **BELUM DITETAPKAN** (AMB-07) |
-   | `OFFICE_LONGITUDE` | **BELUM DITETAPKAN** (AMB-07) |
-   | `OFFICE_RADIUS_METERS` | `50` (DEC-004) |
+   | `SPREADSHEET_ID` | Diisi oleh pengelola (nilai di Script Properties, **tidak** di repo — DEC-P08/DEC-P20; `backendConfigured:true`) |
+   | `DRIVE_FOLDER_ID` | Diisi oleh pengelola (nilai di Script Properties, **tidak** di repo — DEC-P20) |
+   | `OFFICE_LATITUDE` | Ditetapkan pengguna 2026-10-19 (nilai di Script Properties, **tidak** di repo — AMB-07/DEC-P20) |
+   | `OFFICE_LONGITUDE` | Ditetapkan pengguna 2026-10-19 (nilai di Script Properties, **tidak** di repo — AMB-07/DEC-P20) |
+   | `OFFICE_RADIUS_METERS` | `50` (DEC-004 / DEC-P20) |
    | `PIN_KDF_ITERATIONS` | Opsional (default 10000 — **WAJIB benchmark**, D2) |
    | `SESSION_TTL_MINUTES` | Opsional (default 480) |
    | `ADMIN_SETUP_NIP` | Ya untuk bootstrap (D4) — hapus setelah seed |
@@ -66,8 +66,10 @@ tetap wajib memverifikasi identitas & peran di backend.
    belum diisi.
 4. Uji login dengan akun admin hasil `seedAdmin()`.
    **Status verifikasi PHASE 6 (2026-10-19):** health check merespons `ok:true`,
-   `phase:report`, `backendConfigured:false`. Uji login/absensi/laporan penuh
-   **belum dijalankan** (menunggu `SPREADSHEET_ID`, DEC-P08).
+   `phase:report`, `backendConfigured:true` (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID`
+   terisi; sheet `Akun` terverifikasi ada), `officeLocationConfigured:false`
+   (koordinat belum disimpan di Script Properties). Uji login/absensi/laporan
+   penuh dengan akun nyata **belum dijalankan**.
 
 ## F. Deploy Frontend ke GitHub Pages
 1. Push repositori (tanpa berkas rahasia; lihat `.gitignore`).
@@ -78,7 +80,7 @@ tetap wajib memverifikasi identitas & peran di backend.
    **Status verifikasi PHASE 6 (2026-10-19):** Pages diaktifkan (branch `master`,
    root `/`). `GET https://kipasel.github.io/Absensi/` → **200**; aset
    `config.js`/`service-worker.js`/`manifest.webmanifest` → 200; versi tersaji
-   `0.5.1`. Uji browser nyata (kamera/GPS/SW) **belum dijalankan**.
+   `0.5.2`. Uji browser nyata (kamera/GPS/SW) **belum dijalankan**.
 
 ## G. Memisahkan Lingkungan Uji dan Produksi
 - Gunakan Spreadsheet, folder Drive, dan proyek Apps Script **terpisah** untuk uji

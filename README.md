@@ -13,12 +13,12 @@ Aplikasi absensi pegawai berbasis Progressive Web App (PWA).
 **PHASE 6 — QA rilis: selesai (lokal); BELUM SIAP RILIS.** Audit kode & keamanan
 dilakukan; 3 bug frontend diperbaiki (retry absensi, reset tombol kirim, penanganan
 sesi kedaluwarsa); seluruh suite uji lokal lulus (64/42/112/156/162). Verifikasi
-nyata: backend Apps Script ter-deploy & health check `ok:true` (tapi
-`backendConfigured:false` — `SPREADSHEET_ID` belum diisi, DEC-P08); **GitHub Pages
-sudah aktif** — frontend live di `https://kipasel.github.io/Absensi/` (HTTP 200,
-versi 0.5.2), tetapi uji browser nyata belum dijalankan. Rilis terblokir
-konfigurasi kritis (`SPREADSHEET_ID`, `DRIVE_FOLDER_ID`, koordinat kantor AMB-07).
-Lihat `docs/PROGRESS.md` & `docs/DEPLOYMENT.md`.
+nyata: backend Apps Script ter-deploy & health check `ok:true` dengan
+`backendConfigured:true` (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID` terisi — DEC-P08/DEC-P20);
+**GitHub Pages sudah aktif** — frontend live di `https://kipasel.github.io/Absensi/`
+(HTTP 200, versi 0.5.2). Rilis terblokir penyimpanan koordinat kantor di Script
+Properties (AMB-07) dan uji integrasi/browser nyata. Lihat `docs/PROGRESS.md`
+& `docs/DEPLOYMENT.md`.
 
 Rincian phase sebelumnya:
 **PHASE 5 — Laporan & Ekspor: selesai (lokal).** Halaman laporan admin (filter
