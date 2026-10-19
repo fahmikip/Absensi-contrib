@@ -83,7 +83,7 @@ tetap wajib memverifikasi identitas & peran di backend.
    **Status verifikasi PHASE 6 (2026-10-19):** Pages diaktifkan (branch `master`,
    root `/`). `GET https://kipasel.github.io/Absensi/` → **200**; aset
    `config.js`/`service-worker.js`/`manifest.webmanifest` → 200; versi tersaji
-   `0.6.1`. Uji browser nyata (kamera/GPS/SW) **belum dijalankan**.
+   `0.6.2`. Uji browser nyata (kamera/GPS/SW) **belum dijalankan**.
 
 ## G. Memisahkan Lingkungan Uji dan Produksi
 - Gunakan Spreadsheet, folder Drive, dan proyek Apps Script **terpisah** untuk uji

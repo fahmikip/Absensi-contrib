@@ -436,3 +436,32 @@ keselarasan `VERSION == CACHE_VERSION` dan format `API_BASE_URL`).
 
 Sisa blocker rilis: **uji integrasi/browser nyata** (login & absensi akun nyata,
 GPS WFO, kamera, PWA/SW, ekspor CSV di perangkat) + benchmark PBKDF2 runtime (D2).
+
+## Pasca-PHASE 6 — Penyempurnaan visual UI (0.6.2) (2026-10-19)
+
+Permintaan pengguna: perbaiki UI dengan warna lebih ramah mata, latar lebih
+"kekinian" bernuansa teknologi, dan **warna ciri khas KPU beserta aksennya**.
+
+Sumber warna (tidak dikarang): `www.kpu.go.id` (CSS halaman resmi) →
+merah `#D82731`/`#CA0027`, marun `#771414`, emas/oranye `#F8A73E`, latar `#F6F9FA`.
+Brandfetch untuk `kpu.go.id` mencatat `#FC1010`/`#26323D`/`#C4C5D6` (dari logo) —
+dipakai sebagai rujukan pendukung, tidak dipilih utama.
+
+Perubahan (hanya CSS + warna sistem; **tanpa perubahan JS/ID/logika**):
+- `assets/css/styles.css` — token warna baru (`--brand`, `--brand-ink`,
+  `--brand-text`, `--accent`, dst.); latar `--bg` non-putih + **gradien radial
+  merah/marun/emas + kisi halus** (nuansa teknologi, murni CSS, mode gelap ikut);
+  app bar & hero bergradien marun→merah dengan pendar emas; aksen emas pada
+  eyebrow hero, tepi notice, dan garis atas bilah bawah; fokus `:focus-visible`
+  merah; kartu dengan gradien halus + bayangan lebih halus; status dot ber-cincin;
+  tombol primer gradien merah; item nav aktif bergaris merah/marun.
+  Kontras putih-di-merah `#D82731` ≈ **4.9:1** (lolos WCAG AA teks normal).
+- `index.html` — `theme-color` `#4f46e5` → `#771414`.
+- `manifest.webmanifest` — `background_color` `#f4f6f8`, `theme_color` `#771414`.
+- `assets/js/config.js` VERSION `0.6.1` → `0.6.2`; `service-worker.js`
+  `CACHE_VERSION` `app-v0.6.2`.
+- Dokumentasi: `README.md`, `docs/ARCHITECTURE.md`, `AGENTS.md`.
+
+Validasi: seluruh kelas yang di-set JS (19 pola) tetap ada di CSS; ID tetap
+utuh; `node tests/check-foundation.mjs` **67 lulus, 0 gagal** (sintaks + versi
+selaras + scan rahasia). Uji visual di browser/perangkat **belum dilakukan**.

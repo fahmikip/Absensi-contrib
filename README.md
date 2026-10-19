@@ -7,7 +7,7 @@ Aplikasi absensi pegawai berbasis Progressive Web App (PWA).
 - **Database:** Google Sheets.
 - **Penyimpanan foto:** Google Drive privat.
 - **Zona waktu:** `Asia/Jakarta`.
-- **Versi aplikasi:** `0.6.1` (sumber: `assets/js/config.js`).
+- **Versi aplikasi:** `0.6.2` (sumber: `assets/js/config.js`).
 
 ## Status Proyek
 **PHASE 6 — QA rilis: selesai (lokal); BELUM SIAP RILIS.** Audit kode & keamanan
@@ -17,15 +17,17 @@ nyata: backend Apps Script ter-deploy & health check `ok:true` dengan
 `backendConfigured:true` (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID` terisi — DEC-P08/DEC-P20)
 dan **`officeLocationConfigured:true`** (koordinat kantor tersimpan — AMB-07/DEC-P20);
 **GitHub Pages sudah aktif** — frontend live di `https://kipasel.github.io/Absensi/`
-(HTTP 200, versi 0.6.1). Rilis terblokir **uji integrasi/browser nyata**
+(HTTP 200, versi 0.6.2). Rilis terblokir **uji integrasi/browser nyata**
 (kamera/GPS/PWA/SW, login & absensi akun nyata). Lihat `docs/PROGRESS.md`
 & `docs/DEPLOYMENT.md`.
 
-**UI 0.6.0 (mobile app):** antarmuka dirombak menjadi app shell — app bar lengket
+**UI 0.6.x (mobile app):** antarmuka berbentuk app shell — app bar lengket
 + **bilah navigasi bawah** (Beranda/Absensi/Admin/Profil), kartu, dan tombol besar
-ala aplikasi mobile; aksen indigo; mode gelap. `assets/js/nav.js` mengatur
-perpindahan tampilan (item Admin hanya untuk peran admin). Logika bisnis & seluruh
-ID/kelas yang dipakai modul lain tidak berubah.
+ala aplikasi mobile. Warna **ciri khas KPU** (merah `#D82731`, marun `#771414`,
+emas `#F8A73E` — mengikuti `www.kpu.go.id`) dengan netral lembut agar nyaman di
+mata, latar bergaya teknologi (gradien radial + kisi halus), mode gelap.
+`assets/js/nav.js` mengatur perpindahan tampilan (item Admin hanya untuk peran
+admin). Logika bisnis & seluruh ID/kelas yang dipakai modul lain tidak berubah.
 
 Rincian phase sebelumnya:
 **PHASE 5 — Laporan & Ekspor: selesai (lokal).** Halaman laporan admin (filter

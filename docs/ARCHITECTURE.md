@@ -26,8 +26,11 @@ Google Apps Script Web App  (doGet/doPost; satu-satunya lapisan tepercaya)
 - `service-worker.js` — cache aset statis only (termasuk `api.js`/`auth.js`/
   `camera.js`/`attendance.js`/`admin.js`/`report.js`/`nav.js`); permintaan
   lintas-origin diteruskan tanpa di-cache; navigasi fallback app shell.
-- `assets/css/styles.css` — sistem desain mobile-first (aksen indigo), app bar,
-  kartu, tombol besar, bilah navigasi bawah; mode gelap sistem.
+- `assets/css/styles.css` — sistem desain mobile-first; **palet warna ciri khas
+  KPU** (merah `#D82731`, marun `#771414`, emas `#F8A73E` dari `www.kpu.go.id`)
+  di atas netral lembut; latar bergaya teknologi (gradien radial + kisi halus,
+  tanpa aset gambar); app bar, kartu, tombol besar, bilah navigasi bawah; mode
+  gelap sistem.
 - `assets/js/config.js` — konfigurasi publik (nama, versi, `API_BASE_URL`). Tanpa rahasia.
 - `assets/js/api.js` — klien POST `text/plain`; token sesi HANYA di memori (D1).
 - `assets/js/app.js` — status jaringan, status backend (health check), registrasi SW.

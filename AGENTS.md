@@ -70,18 +70,22 @@ Google Apps Script → Google Sheets + Google Drive privat. Zona waktu `Asia/Jak
 
 ## Catatan Runtime (2026-10-19)
 - `API_BASE_URL` diperbarui ke URL Web App terbaru pengguna (DEC-P21); versi aset
-  dinaikkan ke `0.6.1` agar service worker menarik `config.js` terbaru.
+  dinaikkan ke `0.6.2` agar service worker menarik `config.js` terbaru.
 - **UI 0.6.0**: app shell mobile (app bar + bilah navigasi bawah
   Beranda/Absensi/Admin/Profil) via `assets/js/nav.js`; `index.html`,
   `assets/css/styles.css` dirombak. Hook JS (ID/kelas `att-*`, `admin-*`,
   `report-*`, `dot*`, `form-message*`, `session-info*`, `admin-tab--active`)
   dipertahankan; logika bisnis tidak diubah. `[hidden]{display:none!important}`
   ditambahkan (memperbaiki langkah absensi yang sebelumnya bisa saling tampil).
+- **Palet UI 0.6.2 (warna ciri khas KPU):** merah `#D82731`, marun `#771414`,
+  emas `#F8A73E` (sumber: `www.kpu.go.id`) + netral lembut; latar gradien radial
+  + kisi halus (tanpa aset gambar); `theme-color` kini `#771414`. Warnai kembali
+  **hanya** bila pengguna meminta; jangan ubah aturan aksesibilitas/kontras.
 - Health live URL terbaru: `backendConfigured:true` (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID`
   sudah diisi di Script Properties — DEC-P20, nilai tidak di repo),
   `officeLocationConfigured:true` (koordinat AMB-07 sudah tersimpan, 2026-10-19).
 - Probe `POST action=login` (NIP sintetis) → `AUTH_FAILED` → sheet `Akun` sudah ada.
-- Frontend live: `https://kipasel.github.io/Absensi/` (HTTP 200, versi 0.6.1);
+- Frontend live: `https://kipasel.github.io/Absensi/` (HTTP 200, versi 0.6.2);
   uji browser nyata belum dijalankan.
 
 ## Format Laporan Phase
