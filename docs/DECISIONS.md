@@ -169,12 +169,13 @@ Sumber: jawaban pengguna atas pertanyaan D0–D8 (lihat `docs/PHASE2_AUDIT.md`).
 ### DEC-P19 — URL deployment Apps Script (AMB-23 sebagian, FD-09)
 - Tanggal: 2026-10-19; Status: DISETUJUI (berdasarkan jawaban pengguna)
 - Keputusan:
-  - Nilai `API_BASE_URL` di `assets/js/config.js` dikonfirmasi pengguna sebagai
-    URL Web App Apps Script yang benar dan disengaja. Nilai terkini (redploy/
-    pembaruan pengguna, 2026-10-19):
-    `https://script.google.com/macros/s/AKfycbx-eQ5Xx5mHTSXDbKyjd8bpyGN1dxnMfU_rLKuHCGiMLWaaLhzvG20D3img9-KvGs1u/exec`
-    (nilai sebelumnya diganti mengikuti instruksi pengguna "Api baru"; format
-    & sifatnya sama — URL Web App Apps Script).
+   - Nilai `API_BASE_URL` di `assets/js/config.js` dikonfirmasi pengguna sebagai
+     URL Web App Apps Script yang benar dan disengaja. Nilai terkini (pembaruan
+     pengguna, 2026-10-19):
+     `https://script.google.com/macros/s/AKfycbzuL5JnVA90o-Q-aZBp7X-4_rdxFXOdHz0O0Y2rSy-e488KtGyUuFk3xfvLu0WDJ-5p/exec`
+     (nilai sebelumnya diganti mengikuti instruksi pengguna "update API"; format
+     & sifatnya sama — URL Web App Apps Script). Versi aset dinaikkan ke `0.5.2`
+     agar service worker menarik `config.js` terbaru.
   - Tes fondasi FD-09 disesuaikan: mensyaratkan `API_BASE_URL` berformat URL
     Web App Apps Script yang valid (bukan lagi "harus kosong").
   - Verifikasi awal (2026-10-19): `GET ?action=health` pada URL terkini

@@ -342,6 +342,10 @@ Verifikasi runtime non-destruktif (2026-10-19):
 - GitHub Pages: **diaktifkan** (branch `master`, root `/`); build `built`;
   `GET https://kipasel.github.io/Absensi/` → **200** dan aset
   (`config.js`/`service-worker.js`/`manifest.webmanifest`) → 200 (versi 0.5.1).
+- Pembaruan API (2026-10-19): pengguna memberikan URL Web App baru; `config.js`
+  `API_BASE_URL` diperbarui (DEC-P19) dan versi dinaikkan `0.5.1` → `0.5.2`
+  (bersama `CACHE_VERSION`) agar service worker menarik `config.js` terbaru.
+  Pengujian fondasi tetap 64/0 (FD-09 format URL valid + versi selaras).
 
 Pengujian dijalankan (hasil apa adanya; suite backend tak tersentuh perbaikan):
 - `node tests/check-foundation.mjs` → **64 lulus, 0 gagal** (sebelumnya 60).
