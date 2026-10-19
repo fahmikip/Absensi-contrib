@@ -15,17 +15,17 @@ Google Apps Script Web App  (doGet/doPost; satu-satunya lapisan tepercaya)
         +--> Google Drive    (foto privat)
 ```
 
-## Struktur Frontend (aktual PHASE 4)
+## Struktur Frontend (aktual PHASE 5)
 - `index.html` — halaman awal + panel masuk/sesi + section absensi +
-  **section `admin-view`** (tab Pegawai/Absensi/Susulan/Log audit); menampilkan
-  status aplikasi, jaringan, backend, dan versi. Tidak ada data fiktif.
+  **section `admin-view`** (tab Pegawai/Absensi/Susulan/Laporan/Log audit);
+  menampilkan status aplikasi, jaringan, backend, dan versi. Tidak ada data fiktif.
 - `manifest.webmanifest` — manifest PWA (`start_url`/`scope` relatif `./` agar
   kompatibel dengan sub-path GitHub Pages).
 - `service-worker.js` — cache aset statis only (termasuk `api.js`/`auth.js`/
-  `camera.js`/`attendance.js`/`admin.js`); permintaan lintas-origin diteruskan
-  tanpa di-cache; navigasi fallback app shell.
+  `camera.js`/`attendance.js`/`admin.js`/`report.js`); permintaan lintas-origin
+  diteruskan tanpa di-cache; navigasi fallback app shell.
 - `assets/css/styles.css` — gaya netral, responsif, mode gelap sistem + form +
-  panel admin.
+  panel admin + laporan/rekapitulasi.
 - `assets/js/config.js` — konfigurasi publik (nama, versi, `API_BASE_URL`). Tanpa rahasia.
 - `assets/js/api.js` — klien POST `text/plain`; token sesi HANYA di memori (D1).
 - `assets/js/app.js` — status jaringan, status backend (health check), registrasi SW.
@@ -35,16 +35,21 @@ Google Apps Script Web App  (doGet/doPost; satu-satunya lapisan tepercaya)
 - `assets/js/attendance.js` — alur absensi (jendela waktu/GPS/foto/idempoten).
 - `assets/js/admin.js` — panel admin (PHASE 4); tampil hanya bila peran `admin`
   (event `auth:login`); render data via `textContent` (anti-XSS); tanpa URL foto.
+- `assets/js/report.js` — tab Laporan (PHASE 5): filter periode/pegawai/jenis/
+  mode/sumber/status, kartu rekapitulasi + tabel harian, tabel rincian
+  berpaginasi, ekspor CSV via Blob (nama berkas divalidasi); tampil hanya bila
+  peran `admin`; panel disembunyikan saat tab admin lain aktif.
 - `assets/icons/` — ikon placeholder netral, dibuat `tools/generate-icons.mjs`.
 
-## Struktur Backend (aktual PHASE 4)
+## Struktur Backend (aktual PHASE 5)
 - `gas/Code.gs` — `doGet`/`doPost`, router aksi, respons JSON konsisten.
   Aksi: `health`, `login`, `logout`, `session.check`,
   `admin.account.create`, `admin.account.setActive`, `admin.account.resetPin`,
-  `attendance.submit`, dan 11 aksi PHASE 4:
-  `admin.pegawai.list|detail|create|update|setActive`,
+  `attendance.submit`, 11 aksi PHASE 4
+  (`admin.pegawai.list|detail|create|update|setActive`,
   `admin.absensi.list|detail`, `admin.susulan.list|detail|decide`,
-  `admin.log.list`.
+  `admin.log.list`), dan 3 aksi PHASE 5:
+  `report.absensi.list`, `report.rekap`, `report.absensi.exportCsv`.
 - `gas/Config.gs` — konfigurasi Script Properties + kebijakan (iterasi PBKDF2,
   TTL sesi, lockout) + `AppError_`.
 - `gas/Auth.gs` — primitif PBKDF2-HMAC-SHA256, PIN, token, lockout, validitas sesi.
@@ -54,6 +59,10 @@ Google Apps Script Web App  (doGet/doPost; satu-satunya lapisan tepercaya)
 - `gas/AdminService.gs` — **endpoint panel admin (PHASE 4)**; semua aksi:
   POST + `requireAdmin_` (peran diverifikasi dari sesi server) + `withLock_`
   untuk operasi tulis + `logActivity_`.
+- `gas/ReportService.gs` — **endpoint laporan & ekspor (PHASE 5)**; semua aksi:
+  POST + `requirePost_` + `requireAdmin_`; pembacaan saja (tanpa lock);
+  filter wajib rentang tanggal ≤92 hari; ekspor CSV (BOM UTF-8, guard
+  formula-injection, ≤5000 baris) + `logActivity_('report_exported')`.
 - `gas/TimeRule.gs`, `gas/Geo.gs`, `gas/Drive.gs`, `gas/Attendance.gs` — mesin absensi (PHASE 3).
 - `gas/Bootstrap.gs` — `initializeSheets()` & `seedAdmin()` (manual, tanpa PIN default).
 - `gas/appsscript.json` — timezone `Asia/Jakarta`, runtime V8, blok `webapp` (D8).

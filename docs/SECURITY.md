@@ -112,3 +112,29 @@ Belum / belum terverifikasi (PHASE 4):
 - Konkurensi `LockService` pada eksekusi nyata.
 - Pembatasan jumlah data (limit 200) belum diuji pada volume besar.
 - Belum ada pembatasan rate/kuota khusus endpoint admin (kuota platform saja).
+
+## Status Laporan & Ekspor PHASE 5 (terimplementasi, diuji lokal)
+Kontrol di `gas/ReportService.gs` (semua aksi `report.*`):
+- **Otorisasi server penuh:** `requirePost_` + `requireAdmin_`; peran diambil
+  dari sesi terverifikasi server, TIDAK dari body klien. Penerima laporan =
+  admin (DEC-P07). Diuji: tanpa token → `UNAUTHORIZED`; token pegawai →
+  `FORBIDDEN`; peran palsu diabaikan; GET → `METHOD_NOT_ALLOWED` (162 cek LULUS).
+- **Ekspor CSV aman secara konten:** kolom tetap (tidak mengikuti filter apa
+  pun ke keamanan); TIDAK memuat `drive_file_id`, tautan/URL foto, `pin_hash`,
+  `pin_salt`, atau token. Guard formula-injection (nilai berawalan
+  `=` `+` `-` `@` → diapostrofi) HANYA pada berkas ekspor; data sumber di
+  Sheet tidak dimodifikasi (dites).
+- **Batas data:** rentang ≤92 hari/permintaan; ekspor ≤5000 baris →
+  `EXPORT_TOO_LARGE` (tidak dipotong diam-diam) untuk membatasi jumlah data
+  yang keluar dalam satu respons.
+- **Log:** ekspor tercatat di `LogAktivitas` (`report_exported`) tanpa
+  token/PIN/isi baris pribadi.
+- **UI `report.js`:** hanya hiasan; render via `textContent` (anti-XSS);
+  unduhan CSV memakai Blob lokal dengan nama berkas divalidasi regex —
+  tanpa permintaan lintas-origin dan tanpa menyimpan token di URL.
+
+Belum / belum terverifikasi (PHASE 5):
+- Pengujian runtime Apps Script & browser (RP-15..RP-17 di TEST_PLAN).
+- Perilaku pada volume data besar (query penuh per rentang tanpa indeks khusus).
+- Pembatasan rate/kuota khusus endpoint laporan (hanya kuota platform).
+- Review independen terhadap logika filter & rekap.

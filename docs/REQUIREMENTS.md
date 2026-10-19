@@ -119,4 +119,6 @@ Threat modeling minimal terhadap: percobaan PIN berulang; pemalsuan permintaan f
 
 ## 15. Ruang Lingkup Tidak Termasuk (default)
 Fitur di luar absensi pegawai, pengelolaan pegawai, panel admin, laporan, audit,
-dan PWA tidak termasuk kecuali disetujui. Rekap/ekspor detail belum ditetapkan → `AMB-19`.
+dan PWA tidak termasuk kecuali disetujui. Rekap/ekspor detail: format ekspor
+**CSV saja** & laporan = admin (DEC-P07, AMB-19 ANSWERED); aturan indikator
+kebijakan (terlambat/persen kehadiran) tetap belum ditetapkan.

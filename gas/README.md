@@ -1,9 +1,10 @@
-# Backend Google Apps Script — Absensi & Panel Admin (PHASE 2–4)
+# Backend Google Apps Script — Absensi, Panel Admin & Laporan (PHASE 2–5)
 
 Backend Sistem Absensi KPU Kabupaten Aceh Selatan. Tersedia: autentikasi
 (login NIP/NIPK + PIN, sesi, logout, manajemen akun admin), mesin absensi
-reguler (PHASE 3), dan **panel admin** (PHASE 4: pengelolaan pegawai,
-daftar/detail absensi, putuskan susulan, log audit).
+reguler (PHASE 3), **panel admin** (PHASE 4: pengelolaan pegawai,
+daftar/detail absensi, putuskan susulan, log audit), dan **laporan & ekspor
+CSV** (PHASE 5: filter periode, rekapitulasi, ekspor CSV — admin saja).
 
 ## Berkas
 | Berkas | Fungsi |
@@ -14,6 +15,7 @@ daftar/detail absensi, putuskan susulan, log audit).
 | `Repo.gs` | Akses Google Sheets, `LockService`, ID internal, log aktivitas. |
 | `AuthService.gs` | Alur login/logout/session.check, otorisasi peran, manajemen akun admin. |
 | `AdminService.gs` | Endpoint panel admin (semua wajib peran `admin` diverifikasi server). |
+| `ReportService.gs` | Endpoint laporan, rekap, dan ekspor CSV (PHASE 5; semua wajib peran `admin`). |
 | `TimeRule.gs` | Aturan jendela waktu absensi (WIB; DEC-003/DEC-P18). |
 | `Geo.gs` | Haversine + evaluasi GPS masuk WFO (radius ≤50 m). |
 | `Drive.gs` | Simpan foto JPEG ke folder Drive privat ABSENSI_KPU/… |
@@ -47,6 +49,19 @@ Token sesi HANYA dikirim di body (bukan query string).
 | `admin.susulan.detail` | POST | Ya (admin) | Detail pengajuan + alasan + status keputusan. |
 | `admin.susulan.decide` | POST | Ya (admin) | `keputusan:'terima'|'tolak'` + `catatan_keputusan`; hanya dari `menunggu`. |
 | `admin.log.list` | POST | Ya (admin) | Log audit (filter aksi/limit). |
+| `report.absensi.list` | POST | Ya (admin) | Daftar absensi untuk laporan (rentang wajib, filter; join nama). |
+| `report.rekap` | POST | Ya (admin) | Rekapitulasi fakta terhitung per filter (tanpa indikator kebijakan). |
+| `report.absensi.exportCsv` | POST | Ya (admin) | Ekspor CSV (rentang wajib, filter); maks 5000 baris. |
+
+Catatan PHASE 5:
+- Rentang tanggal wajib dan maksimum **92 hari** (`REPORT_MAX_RANGE_DAYS`).
+- Ekspor maksimum **5000 baris** (`REPORT_EXPORT_MAX_ROWS`); kelebihan →
+  `EXPORT_TOO_LARGE` (tidak dipotong diam-diam).
+- CSV diawali BOM UTF-8; guard formula-injection hanya pada berkas ekspor;
+  kolom tetap tanpa `drive_file_id`, URL foto, PIN, atau token.
+- Indikator kebijakan (terlambat, persentase kehadiran, dll.) **tidak
+  dihitung** — aturannya belum ditetapkan (DEC-P07).
+- Ekspor tercatat di log sebagai `report_exported`.
 
 Catatan PHASE 4:
 - Respons **tidak pernah** memuat `pin_hash`, `pin_salt`, `drive_file_id`, atau
@@ -102,4 +117,5 @@ Isi via **Project Settings → Script Properties** (jangan simpan di kode):
 - Pengajuan susulan oleh pegawai (form/alur belum ada; hanya keputusan admin).
 - Akses/penampilan foto oleh admin (AMB-20) — tidak ada endpoint foto.
 - Impor CSV (AMB-14), retensi (AMB-18), notifikasi (AMB-25).
-- Laporan/ekspor (PHASE 5).
+- Indikator kebijakan laporan (terlambat, tidak hadir, persentase kehadiran) —
+  aturannya belum ditetapkan (DEC-P07).

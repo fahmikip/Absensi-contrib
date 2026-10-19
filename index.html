@@ -21,7 +21,7 @@
              alt="" width="40" height="40" aria-hidden="true" />
         <div>
           <h1 class="app-header__title" id="app-name">Sistem Absensi KPU Kabupaten Aceh Selatan</h1>
-          <p class="app-header__subtitle">Fase Panel Admin</p>
+          <p class="app-header__subtitle">Fase Laporan &amp; Ekspor</p>
         </div>
       </div>
       <span class="badge badge--neutral" id="app-version">versi -</span>
@@ -32,13 +32,13 @@
     <section class="notice" role="status" aria-live="polite">
       <h2 class="notice__title">Tahap pengembangan</h2>
       <p class="notice__text">
-        Tahap panel admin tersedia: masuk dengan NIP/NIPK dan PIN, lalu absen
+        Tahap laporan tersedia: masuk dengan NIP/NIPK dan PIN, lalu absen
         masuk/pulang (WFO atau WFH/WFA) dengan foto kamera; GPS diwajibkan
         untuk masuk WFO. Administrator dapat mengelola pegawai, melihat data
-        absensi, memutuskan pengajuan susulan, dan meninjau log audit.
-        Fitur pengajuan susulan oleh pegawai dan laporan <strong>belum
-        tersedia</strong>. Validasi GPS menunggu penetapan koordinat kantor
-        (belum dikonfigurasi).
+        absensi, memutuskan pengajuan susulan, meninjau log audit, melihat
+        laporan &amp; rekapitulasi per periode, dan mengekspor CSV.
+        Fitur pengajuan susulan oleh pegawai <strong>belum</strong> tersedia.
+        Validasi GPS menunggu penetapan koordinat kantor (belum dikonfigurasi).
       </p>
     </section>
 
@@ -170,6 +170,7 @@
         <button class="btn admin-tab" type="button" data-admin-tab="pegawai">Pegawai</button>
         <button class="btn admin-tab" type="button" data-admin-tab="absensi">Absensi</button>
         <button class="btn admin-tab" type="button" data-admin-tab="susulan">Susulan</button>
+        <button class="btn admin-tab" type="button" data-admin-tab="laporan">Laporan</button>
         <button class="btn admin-tab" type="button" data-admin-tab="log">Log audit</button>
       </nav>
 
@@ -281,6 +282,111 @@
         <div id="susulan-detail" class="admin-detail" hidden></div>
       </div>
 
+      <div id="report-panel" class="admin-tab-panel" hidden>
+        <div class="admin-filters report-filters">
+          <div class="form-field">
+            <label class="form-label" for="report-dari">Tanggal awal</label>
+            <input class="form-input" id="report-dari" type="date" required />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="report-sampai">Tanggal akhir</label>
+            <input class="form-input" id="report-sampai" type="date" required />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="report-pegawai">Pegawai</label>
+            <select class="form-input" id="report-pegawai">
+              <option value="">Semua pegawai</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="report-jenis">Jenis</label>
+            <select class="form-input" id="report-jenis">
+              <option value="">Semua</option>
+              <option value="masuk">Masuk</option>
+              <option value="pulang">Pulang</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="report-mode">Mode kerja</label>
+            <select class="form-input" id="report-mode">
+              <option value="">Semua</option>
+              <option value="WFO">WFO</option>
+              <option value="WFH_WFA">WFH/WFA</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="report-sumber">Sumber</label>
+            <select class="form-input" id="report-sumber">
+              <option value="">Semua</option>
+              <option value="reguler">Reguler</option>
+              <option value="susulan_disetujui">Susulan disetujui</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="report-status-pegawai">Status pegawai</label>
+            <select class="form-input" id="report-status-pegawai">
+              <option value="">Semua</option>
+              <option value="aktif">Aktif</option>
+              <option value="nonaktif">Nonaktif</option>
+            </select>
+          </div>
+        </div>
+        <div class="att-actions">
+          <button class="btn btn--primary" id="report-run" type="button">Tampilkan laporan</button>
+          <button class="btn" id="report-export" type="button">Ekspor CSV</button>
+        </div>
+
+        <div id="report-rekap" class="report-rekap" hidden>
+          <h3 class="att-step__subtitle">Rekapitulasi (hitungan catatan &amp; pengajuan)</h3>
+          <div class="report-rekap__grid">
+            <article class="card report-card"><p class="card__title">Catatan absensi</p><p class="card__value" id="rekap-total">-</p></article>
+            <article class="card report-card"><p class="card__title">Catatan masuk</p><p class="card__value" id="rekap-masuk">-</p></article>
+            <article class="card report-card"><p class="card__title">Catatan pulang</p><p class="card__value" id="rekap-pulang">-</p></article>
+            <article class="card report-card"><p class="card__title">Pegawai unik tercatat</p><p class="card__value" id="rekap-pegawai-unik">-</p></article>
+            <article class="card report-card"><p class="card__title">Mode WFO</p><p class="card__value" id="rekap-wfo">-</p></article>
+            <article class="card report-card"><p class="card__title">Mode WFH/WFA</p><p class="card__value" id="rekap-wfh">-</p></article>
+            <article class="card report-card"><p class="card__title">Sumber reguler</p><p class="card__value" id="rekap-reguler">-</p></article>
+            <article class="card report-card"><p class="card__title">Sumber susulan disetujui</p><p class="card__value" id="rekap-susulan-record">-</p></article>
+            <article class="card report-card"><p class="card__title">Susulan menunggu</p><p class="card__value" id="rekap-susulan-menunggu">-</p></article>
+            <article class="card report-card"><p class="card__title">Susulan diterima</p><p class="card__value" id="rekap-susulan-diterima">-</p></article>
+            <article class="card report-card"><p class="card__title">Susulan ditolak</p><p class="card__value" id="rekap-susulan-ditolak">-</p></article>
+          </div>
+          <p class="card__hint">
+            Angka adalah jumlah catatan/pengajuan pada rentang terpilih — bukan
+            penilaian kehadiran, keterlambatan, atau disiplin (definisi kebijakan
+            tersebut BELUM DITETAPKAN).
+          </p>
+          <div class="admin-table-wrap report-harian-wrap">
+            <table class="admin-table" id="report-harian-table">
+              <thead>
+                <tr><th>Tanggal</th><th>Catatan masuk</th><th>Catatan pulang</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="report-detail" class="report-detail" hidden>
+          <h3 class="att-step__subtitle">Rincian catatan absensi</h3>
+          <div class="admin-table-wrap">
+            <table class="admin-table" id="report-table">
+              <thead>
+                <tr>
+                  <th>Tanggal</th><th>Nama</th><th>NIP/NIPK</th><th>Jenis</th>
+                  <th>Mode</th><th>Waktu server</th><th>Sumber</th><th>Jarak (m)</th><th>Bukti</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="report-pagination" class="report-pagination" hidden>
+            <button class="btn" id="report-prev" type="button">Sebelumnya</button>
+            <span id="report-page-info" class="report-page-info">-</span>
+            <button class="btn" id="report-next" type="button">Berikutnya</button>
+          </div>
+        </div>
+      </div>
+
       <div id="admin-tab-log" class="admin-tab-panel" hidden>
         <div class="admin-filters">
           <div class="form-field">
@@ -352,5 +458,6 @@
   <script src="./assets/js/attendance.js"></script>
   <script src="./assets/js/auth.js"></script>
   <script src="./assets/js/admin.js"></script>
+  <script src="./assets/js/report.js"></script>
 </body>
 </html>

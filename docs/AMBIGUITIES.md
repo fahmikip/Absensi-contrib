@@ -26,11 +26,11 @@ Legenda status: `OPEN` (belum dijawab) · `ANSWERED` (dijawab) · `DEFERRED` (se
 | AMB-16 | Skema ID | Format ID internal stabil (Pegawai, Absensi, Bukti, Pengajuan). | 1 | OPEN |
 | AMB-17 | Format waktu & tanggal | Simpan UTC ISO-8601 atau waktu lokal `Asia/Jakarta`? Batas "tanggal" untuk aturan masuk/pulang. | 1,3 | OPEN |
 | AMB-18 | Retensi data | Kebijakan retensi & penghapusan foto/metadata (dinyatakan belum ditetapkan). | 4 | OPEN |
-| AMB-19 | Laporan & ekspor | Isi rekap, format ekspor (CSV/PDF), siapa yang boleh mengekspor? | 5 | OPEN |
+| AMB-19 | Laporan & ekspor | Isi rekap, format ekspor (CSV/PDF), siapa yang boleh mengekspor? | 5 | ANSWERED (DEC-P07: CSV saja, admin; indikator kebijakan tetap BELUM DITETAPKAN) |
 | AMB-20 | Akses foto admin | Bagaimana admin melihat foto privat secara aman (tanpa tautan publik)? Ditampilkan inline, unduhan terproteksi? | 4 | OPEN |
 | AMB-21 | Visibilitas Web App | Deploy Apps Script sebagai "Execute as: Me" + "Who has access: Anyone" (perlu untuk PWA lintas-origin) atau "Anyone with Google account"? Implikasi CORS & keamanan. | 1 | OPEN |
 | AMB-22 | Ukuran & kompresi foto | Batas ukuran/kompresi foto; resolusi; batas payload base64 ke Apps Script; penanganan kegagalan unggah besar. | 3 | OPEN |
-| AMB-23 | Konfigurasi resource | Nilai `SPREADSHEET_ID`, `DRIVE_FOLDER_ID`, nama/URL repo GitHub, URL deployment Apps Script. | 1 | OPEN |
+| AMB-23 | Konfigurasi resource | Nilai `SPREADSHEET_ID`, `DRIVE_FOLDER_ID`, nama/URL repo GitHub, URL deployment Apps Script. | 1 | OPEN (sebagian: URL deployment dijawab DEC-P19; sisanya belum) |
 | AMB-24 | Kuota & beban | Strategi menghadapi kuota Apps Script (waktu eksekusi 6 menit, trigger, limit harian) saat ramai. | 6 | OPEN |
 | AMB-25 | Notifikasi | Apakah diperlukan notifikasi (mis. ke admin saat ada pengajuan susulan)? (belum disebut sebagai kebutuhan). | 4 | OPEN |
 | AMB-26 | Akun nonaktif | Perilaku saat pegawai nonaktif mencoba login (pesan, penanganan riwayat). | 2 | OPEN |

@@ -10,13 +10,14 @@ Aplikasi absensi pegawai berbasis Progressive Web App (PWA).
 - **Versi aplikasi:** `0.4.0` (sumber: `assets/js/config.js`).
 
 ## Status Proyek
-**PHASE 4 — Panel Admin: selesai (lokal).** Endpoint admin (otorisasi peran
-`admin` penuh di server), pengelolaan pegawai, daftar/detail absensi (tanpa
-tautan foto), persetujuan/penolakan susulan, dan log audit telah diimplementasikan
-& diuji lokal di Node (156 cek). Integrasi runtime Apps Script (butuh
-`SPREADSHEET_ID`) dan pengujian browser **belum** dijalankan. Pengajuan susulan
-oleh pegawai, akses foto admin (AMB-20), dan laporan **belum** dibuat.
-Lihat `docs/PROGRESS.md`.
+**PHASE 5 — Laporan & Ekspor: selesai (lokal).** Halaman laporan admin (filter
+periode/pegawai/jenis/mode/sumber/status), rekapitulasi fakta terhitung, tabel
+rincian berpaginasi, dan ekspor **CSV** (DEC-P07) telah diimplementasikan &
+diuji lokal di Node (162 cek; seluruh endpoint `report.*` terotorisasi `admin`
+di server). Integrasi runtime Apps Script (butuh `SPREADSHEET_ID`) dan
+pengujian browser **belum** dijalankan. Pengajuan susulan oleh pegawai, akses
+foto admin (AMB-20), indikator kebijakan (terlambat/persen kehadiran), dan
+format ekspor selain CSV **belum** dibuat. Lihat `docs/PROGRESS.md`.
 
 ## Struktur Proyek
 ```
@@ -24,7 +25,7 @@ index.html                  Halaman awal (status aplikasi/jaringan/backend/versi
 manifest.webmanifest        Manifest PWA
 service-worker.js           Cache aset statis (tanpa data privat)
 assets/
-  css/styles.css            Gaya dasar, responsif, mode gelap + form auth + panel admin
+  css/styles.css            Gaya dasar, responsif, mode gelap + form auth + panel admin + laporan
   js/config.js              Konfigurasi PUBLIK (nama, versi, URL API)
   js/api.js                 Klien POST (token sesi hanya di memori)
   js/app.js                 Logika antarmuka (status jaringan/backend)
@@ -32,6 +33,7 @@ assets/
   js/camera.js              Kamera → canvas JPEG (kompresi klien)
   js/attendance.js          Alur absensi (jenis/mode/GPS/foto/kirim)
   js/admin.js               Panel admin (pegawai/absensi/susulan/log audit)
+  js/report.js              Tab laporan admin (filter, rekap, rincian, ekspor CSV)
   icons/icon-192.png        Ikon placeholder (bukan logo resmi)
   icons/icon-512.png
 gas/
@@ -41,6 +43,7 @@ gas/
   Repo.gs                   Akses Sheets, LockService, log aktivitas
   AuthService.gs            Alur login/sesi/otorisasi/manajemen akun
   AdminService.gs           Endpoint panel admin (otorisasi admin, PHASE 4)
+  ReportService.gs          Endpoint laporan, rekap & ekspor CSV (PHASE 5)
   TimeRule.gs               Aturan jendela waktu absensi (WIB)
   Geo.gs                    Haversine + evaluasi GPS masuk WFO
   Drive.gs                  Simpan foto JPEG ke folder Drive privat
@@ -49,11 +52,12 @@ gas/
   appsscript.json           Manifest Apps Script (timezone + webapp D8)
   README.md                 Dokumentasi backend & deploy
 tools/generate-icons.mjs    Generator ikon placeholder
-tests/check-foundation.mjs  Pemeriksaan fondasi otomatis (54 cek)
+tests/check-foundation.mjs  Pemeriksaan fondasi otomatis (59 cek)
 tests/harness.mjs           Stub runtime Apps Script untuk pengujian Node
 tests/auth.test.mjs         Pengujian autentikasi otomatis (42 cek)
 tests/attendance.test.mjs   Pengujian mesin absensi otomatis (112 cek)
-tests/admin.test.mjs        Pengujian panel admin otomatis (156 cek)
+tests/admin.test.mjs         Pengujian panel admin otomatis (156 cek)
+tests/report.test.mjs        Pengujian laporan & ekspor CSV otomatis (162 cek)
 docs/                       Dokumentasi proyek
 ```
 
@@ -66,15 +70,18 @@ Lalu buka `http://127.0.0.1:8765/`.
 
 ## Pengujian
 ```
-node tests/check-foundation.mjs   # struktur, sintaks, JSON, ikon, tanpa rahasia (54 cek)
+node tests/check-foundation.mjs   # struktur, sintaks, JSON, ikon, tanpa rahasia (59 cek)
 node tests/auth.test.mjs          # autentikasi & kripto (42 cek, termasuk RFC 7914 §11)
 node tests/attendance.test.mjs    # mesin absensi: waktu/GPS/foto/duplikat (112 cek)
 node tests/admin.test.mjs         # panel admin: otorisasi/pegawai/absensi/susulan/log (156 cek)
+node tests/report.test.mjs        # laporan/rekap/ekspor CSV: otorisasi/filter/keamanan (162 cek)
 ```
 Pengujian berjalan di Node dengan stub runtime Apps Script; ini **bukan**
 pengganti pengujian di runtime Apps Script nyata (lihat `docs/TEST_PLAN.md`).
-Catatan: `check-foundation` saat ini memiliki 1 kegagalan FD-09 (`API_BASE_URL`
-terisi) yang pre-existing — lihat `docs/PROGRESS.md` PHASE 4 "Temuan".
+Catatan: `API_BASE_URL` sudah terisi dengan URL deployment Apps Script yang
+dikonfirmasi pengguna (DEC-P19); health live merespons tetapi
+`backendConfigured:false` — `SPREADSHEET_ID`/`DRIVE_FOLDER_ID` belum diisi di
+Script Properties (DEC-P08).
 
 ## Dokumentasi
 | Dokumen | Isi |

@@ -128,6 +128,30 @@ Legenda: `PK` kunci utama internal · `FK` referensi · `?` belum tersedia/opsio
 | `dicabut_pada` | DateTime? | Waktu logout/revoke |
 | `agen` | String | Ringkasan user-agent (tanpa data sensitif) |
 
+## 10. Ekspor CSV laporan (PHASE 5 — berkas keluaran, bukan sheet)
+Dibuat `report.absensi.exportCsv` sesuai DEC-P07 (CSV saja). Urutan kolom tetap:
+
+| Kolom | Sumber | Keterangan |
+|-------|--------|------------|
+| `id_absensi` | Absensi | ID baris |
+| `tanggal` | Absensi | Tanggal absensi (`YYYY-MM-DD`, Asia/Jakarta) |
+| `id_pegawai` | Absensi | ID internal pegawai |
+| `nama` | Pegawai (join) | Nama pegawai |
+| `nip_nipk` | Pegawai (join) | NIP/NIPK |
+| `jenis` | Absensi | `masuk` / `pulang` |
+| `mode_kerja` | Absensi | `WFO` / `WFH_WFA` |
+| `waktu_server` | Absensi | Waktu server (ISO-8601) |
+| `sumber` | Absensi | `reguler` / `susulan_disetujui` |
+| `jarak_meter` | Absensi | Jarak ke kantor (WFO); kosong bila tidak berlaku |
+| `ada_bukti` | Absensi | `ada` / `tidak ada` (hanya metadata; tanpa referensi foto) |
+
+Catatan:
+- TIDAK ada `drive_file_id`, URL foto, `pin_hash`, `pin_salt`, atau token.
+- Nilai yang diawali `=` `+` `-` `@` diapostrofi pada berkas ekspor
+  (guard formula-injection); data sumber tidak diubah.
+- Berkas diawali BOM UTF-8; pemisah `,`; quoting RFC 4180; baris `\r\n`.
+- Nama berkas: `laporan-absensi_YYYY-MM-DD_YYYY-MM-DD.csv`.
+
 ## Belum Ditetapkan
 - Format ID (AMB-16), format waktu (AMB-17), field akhir (AMB-13/15).
 - Retensi & penghapusan (AMB-18).

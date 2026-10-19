@@ -16,14 +16,14 @@ Dijalankan dengan `node tests/check-foundation.mjs`.
 | ID | Kasus | Hasil |
 |----|-------|-------|
 | FD-01 | Struktur berkas lengkap | LULUS |
-| FD-02 | Sintaks JS frontend (`config.js`, `api.js`, `app.js`, `auth.js`, `service-worker.js`) | LULUS |
-| FD-03 | Sintaks Apps Script (`Code.gs`, `Config.gs`, `Auth.gs`, `Repo.gs`, `AuthService.gs`, `Bootstrap.gs`) | LULUS |
+| FD-02 | Sintaks JS frontend (`config.js`, `api.js`, `app.js`, `auth.js`, `admin.js`, `report.js`, `service-worker.js`) | LULUS |
+| FD-03 | Sintaks Apps Script (`Code.gs`, `Config.gs`, `Auth.gs`, `Repo.gs`, `AuthService.gs`, `AdminService.gs`, `ReportService.gs`, `Bootstrap.gs`) | LULUS |
 | FD-04 | Validitas JSON (`manifest.webmanifest`, `appsscript.json`) | LULUS |
 | FD-05 | Ikon PNG valid & berdimensi 192/512 | LULUS |
 | FD-06 | Ikon manifest ada di disk; `start_url`/`scope` relatif | LULUS |
 | FD-07 | Semua referensi aset lokal `index.html` ada | LULUS |
 | FD-08 | Tidak ada rahasia di berkas frontend | LULUS |
-| FD-09 | `API_BASE_URL` masih kosong (tidak klaim terhubung) | **GAGAL** (2026-10-19: URL terisi; pre-existing, keputusan ditunggu — lihat PROGRESS PHASE 4 "Temuan") |
+| FD-09 | `API_BASE_URL` = URL Web App Apps Script yang valid (dikonfirmasi pengguna) | LULUS (2026-10-19: pengguna mengonfirmasi URL deployment; sebelumnya gagal karena tes mensyaratkan kosong) |
 | FD-10 | Tidak ada data mirip NIP/pegawai di frontend | LULUS |
 | FD-11 | Halaman & seluruh aset termuat via HTTP lokal (200) | LULUS |
 | FD-12 | Perilaku service worker online/offline di browser | BELUM DIJALANKAN |
@@ -35,6 +35,7 @@ Dijalankan dengan `node tests/check-foundation.mjs`.
 | FD-18 | Benchmark iterasi PBKDF2 di runtime Apps Script nyata | BELUM DIJALANKAN |
 | FD-19 | Pengujian mesin absensi (`tests/attendance.test.mjs`, 112 cek) | LULUS |
 | FD-20 | Pengujian panel admin (`tests/admin.test.mjs`, 156 cek) | LULUS |
+| FD-21 | Pengujian laporan (`tests/report.test.mjs`, 162 cek) | LULUS |
 
 ## 1. Aturan Waktu (zona `Asia/Jakarta`)
 | ID | Kasus | Ekspektasi |
@@ -128,7 +129,31 @@ BUKAN runtime Apps Script. Data uji sintetis berlabel `TEST`.
 | AD-18 | UI panel admin di browser (form, tab, visibilitas peran) | BELUM DIJALANKAN |
 | AD-19 | Otorisasi admin terhadap Web App nyata (runtime Apps Script) | BELUM DIJALANKAN |
 
-## 8. Yang BELUM Diuji
+## 8. Laporan & Ekspor (PHASE 5) — otomatis
+Dijalankan dengan `node tests/report.test.mjs` (162 cek) — Node + stub,
+BUKAN runtime Apps Script. Data uji sintetis berlabel `TEST`.
+| ID | Kasus | Hasil |
+|----|-------|-------|
+| RP-01 | 3 endpoint `report.*` tanpa token → `UNAUTHORIZED` | LULUS (otomatis) |
+| RP-02 | Endpoint `report.*` dengan token pegawai → `FORBIDDEN` | LULUS (otomatis) |
+| RP-03 | Peran palsu di body diabaikan (peran dari sesi server) | LULUS (otomatis) |
+| RP-04 | Metode GET endpoint laporan → `METHOD_NOT_ALLOWED` | LULUS (otomatis) |
+| RP-05 | Rentang wajib & valid; format tanggal; dari > sampai; >92 hari → `INVALID_INPUT` | LULUS (otomatis) |
+| RP-06 | `id_pegawai` tidak ada → `NOT_FOUND`; enum filter divalidasi backend | LULUS (otomatis) |
+| RP-07 | Daftar: filter gabungan + join nama/NIP + paginasi; **tanpa `drive_file_id`/URL** | LULUS (otomatis) |
+| RP-08 | Pemilihan tanggal memakai kolom `tanggal` (Asia/Jakarta), bukan timestamp UTC | LULUS (otomatis) |
+| RP-09 | Rekap: fakta terhitung per filter; susulan per status (`menunggu`/`diterima`/`ditolak`); TANPA indikator kebijakan (terlambat/persen) | LULUS (otomatis) |
+| RP-10 | CSV: BOM UTF-8, quote RFC 4180, round-trip utuh, kolom tetap, tanpa rahasia/foto | LULUS (otomatis) |
+| RP-11 | Guard formula-injection (`=` `+` `-` `@`) hanya di berkas ekspor; data sumber tak diubah | LULUS (otomatis) |
+| RP-12 | Ekspor >5000 baris → `EXPORT_TOO_LARGE` (bukan potong diam-diam); log `report_exported` tanpa token/PIN | LULUS (otomatis) |
+| RP-13 | Sheet Absensi belum ada → `NOT_CONFIGURED` (bukan ok/kosong) | LULUS (otomatis) |
+| RP-14 | Router `doPost`: ekspor → JSON `ok` + `csv`/`filename`/`rows` | LULUS (otomatis) |
+| RP-15 | UI tab Laporan di browser (filter, rekap, paginasi, visibilitas peran) | BELUM DIJALANKAN |
+| RP-16 | Unduhan Blob CSV di browser (nama berkas, isi) | BELUM DIJALANKAN |
+| RP-17 | Otorisasi & data laporan pada Web App nyata (runtime Apps Script) | BELUM DIJALANKAN |
+
+## 9. Yang BELUM Diuji
+- Kasus laporan RP-15/RP-16/RP-17 (browser & runtime) — baru otomatis Node.
 - Kasus panel admin AD-18/AD-19 (browser & runtime) — baru otomatis Node.
 - Kasus fungsional absensi (WT/GP/PH/TX) dijalankan otomatis via
   `tests/attendance.test.mjs` (112 cek) tetapi **belum** diuji di runtime &

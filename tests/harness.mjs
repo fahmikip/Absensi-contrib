@@ -23,6 +23,7 @@ const GAS_FILES = [
   'gas/Attendance.gs',
   'gas/AuthService.gs',
   'gas/AdminService.gs',
+  'gas/ReportService.gs',
   'gas/Code.gs',
   'gas/Bootstrap.gs'
 ];

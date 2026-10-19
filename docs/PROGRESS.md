@@ -8,7 +8,7 @@
 | 2 | Autentikasi & akun | Selesai sebagian — implementasi + uji lokal lulus; integrasi runtime Apps Script & pengujian browser belum |
 | 3 | Mesin absensi | Selesai — implementasi, validasi & uji lokal (112 cek) |
 | 4 | Panel admin | Selesai (lokal) — endpoint admin, panel UI, uji lokal (156 cek); integrasi runtime & browser belum |
-| 5 | Laporan | Belum dimulai |
+| 5 | Laporan | Selesai (lokal) — endpoint laporan/rekap/ekspor CSV, UI tab Laporan, uji lokal (162 cek); integrasi runtime & browser belum |
 | 6 | Pengujian & rilis | Belum dimulai |
 
 ## PHASE 0 — Audit Kebutuhan (2026-10-15)
@@ -203,11 +203,10 @@ Pengujian dijalankan (hasil apa adanya):
   `service-worker.js` merespons HTTP 200.
 
 Temuan:
-- **FD-09 gagal (pre-existing, di luar perubahan phase ini):** `API_BASE_URL`
-  di `assets/js/config.js` kini terisi URL deployment Apps Script, sedangkan
-  tes mensyaratkan kosong ("backend belum dikonfigurasi") dan baseline phase ini
-  (sebelum perubahan apa pun) juga sudah 49/1. Nilai TIDAK diubah — keputusan
-  pengguna dibutuhkan (apakah ini disengaja; jika ya, FD-09 perlu disesuaikan).
+- **FD-09 (RESOLVED 2026-10-19):** `API_BASE_URL` di `assets/js/config.js`
+  terisi URL deployment Apps Script; awalnya tes mensyaratkan kosong (baseline
+  phase ini 49/1). Pengguna mengonfirmasi URL tersebut disengaja (DEC-P19);
+  FD-09 kini mensyaratkan format URL Web App Apps Script yang valid → LULUS.
   Catatan: `PROGRESS.md` Phase 3 mencatat 50/0 — waktu itu URL masih kosong.
 
 Belum dijalankan / belum terverifikasi:
@@ -217,3 +216,86 @@ Belum dijalankan / belum terverifikasi:
 - Pengujian penetrasi / review independen.
 
 Status: **SELESAI (lokal)** — jangan mulai PHASE 5 tanpa instruksi.
+
+## PHASE 5 — Laporan & Ekspor (2026-10-19)
+
+Keputusan pengguna diterima: format ekspor = **CSV saja** (question tool,
+2026-10-19) → dicatat sebagai DEC-P07 (AMB-19 → ANSWERED). Bagian AMB-19
+"isi rekap" yang berupa aturan kebijakan (terlambat/tidak hadir/persen
+kehadiran) TIDAK diimplementasikan karena masih `BELUM DITETAPKAN`.
+
+Dibuat:
+- `gas/ReportService.gs` — 3 endpoint laporan (semua POST + `requirePost_` +
+  `requireAdmin_`): `report.absensi.list` (filter tanggal wajib ≤92 hari,
+  pegawai/jenis/mode/sumber/status, join nama, paginasi),
+  `report.rekap` (fakta terhitung per filter: catatan, pegawai unik, pecahan
+  mode/sumber/status susulan, rekap per tanggal — tanpa indikator kebijakan),
+  `report.absensi.exportCsv` (BOM UTF-8, header RFC 4180, guard formula
+  injection, maks 5000 baris → `EXPORT_TOO_LARGE`, log `report_exported`).
+- `assets/js/report.js` — tab Laporan pada `admin-view`: filter tanggal/pegawai/
+  jenis/mode/sumber/status, kartu rekapitulasi + tabel harian, tabel rincian
+  berpaginasi, tombol Ekspor CSV (Blob, nama berkas divalidasi regex),
+  state loading/empty/error; render `textContent`; tampil hanya untuk peran
+  admin; panel disembunyikan saat tab lain aktif.
+- `tests/report.test.mjs` — 162 cek otomatis.
+
+Diubah:
+- `gas/Code.gs` — router 3 aksi `report.*`; `health.phase` → `'report'`.
+- `index.html` — tombol tab Laporan + `#report-panel` (filter, kartu rekap,
+  tabel harian, tabel rincian, paginasi), teks subtitle/notice.
+- `assets/css/styles.css` — gaya `report-*` (grid kartu, paginasi, tabel harian).
+- `assets/js/config.js` — versi 0.5.0; `service-worker.js` — cache
+  `app-v0.5.0` + `report.js`.
+- `tests/harness.mjs` — memuat `gas/ReportService.gs`.
+- `tests/check-foundation.mjs` — mencakup berkas baru (59 cek).
+- `tests/auth.test.mjs`, `tests/attendance.test.mjs`, `tests/admin.test.mjs` —
+  asersi `phase:'report'`.
+- Dokumentasi: `README.md`, `AGENTS.md`, `docs/ARCHITECTURE.md`,
+  `docs/SECURITY.md`, `docs/TEST_PLAN.md`, `docs/DATA_DICTIONARY.md`,
+  `docs/DECISIONS.md` (DEC-P07), `docs/AMBIGUITIES.md` (AMB-19 ANSWERED),
+  `gas/README.md`.
+
+Perilaku & batasan (interpretasi/limitasi teknis, bukan aturan kebijakan baru):
+- Zona waktu pemilihan tanggal memakai kolom `tanggal` (Asia/Jakarta), bukan
+  timestamp UTC — diuji lintas batas hari.
+- Susulan dihitung dari `tanggal_absensi` per status (menunggu/diterima/ditolak);
+  filter `sumber` TIDAK berlaku pada susulan. Keputusan susulan tetap TIDAK
+  menulis baris Absensi (PHASE 4; konversi butuh keputusan aturan).
+- Ekspor CSV TIDAK memuat `drive_file_id`, URL/tautan foto, PIN, token, atau
+  kolom rahasia; guard formula-injection hanya di berkas ekspor (data sumber
+  tidak diubah).
+- Asumsi teknis sementara (lihat DEC-P07): rentang ≤92 hari, ekspor ≤5000
+  baris, paginasi default 50/maks 200 — dapat diubah bila ada masukan.
+
+Pengujian dijalankan (hasil apa adanya):
+- `node tests/report.test.mjs` → **162 lulus, 0 gagal** (otorisasi 3 endpoint;
+  validasi rentang/tanggal/filter; join & paginasi; rekap termasuk susulan per
+  status; CSV BOM/quote/round-trip UTF-8, formula-injection, jumlah kolom tetap,
+  EXPORT_TOO_LARGE, log tanpa rahasia; kegagalan sistem NOT_CONFIGURED;
+  router/doPost).
+- `node tests/auth.test.mjs` → 42/0, `node tests/attendance.test.mjs` → 112/0,
+  `node tests/admin.test.mjs` → 156/0.
+- `node tests/check-foundation.mjs` → **60 lulus, 0 GAGAL** (FD-09 resmi
+  berubah setelah pengguna mengonfirmasi URL deployment — DEC-P19; lihat
+  "Tambahan pasca-phase" di bawah).
+- Server statis lokal (`py -m http.server 8765`) → `index.html`, `report.js`,
+  `styles.css`, `service-worker.js`, `config.js` merespons HTTP 200.
+
+Tambahan pasca-phase (2026-10-19, setelah konfirmasi FD-09/DEC-P19):
+- Verifikasi langsung endpoint: `GET <API_BASE_URL>?action=health` →
+  `{"ok":true,"phase":"report","backendConfigured":false,
+  "officeLocationConfigured":false,...}` — backend ter-deploy dan menjalankan
+  kode PHASE 5; `backendConfigured:false` = `SPREADSHEET_ID` belum diisi
+  (DEC-P08 menunggu). `DRIVE_FOLDER_ID` & koordinat kantor (AMB-07) juga belum.
+- `check-foundation.mjs` FD-09 disesuaikan (format URL Web App valid) → 60/0.
+- Pengguna memberikan **API baru** (redeploy/pembaruan URL, 2026-10-19);
+  `config.js` diperbarui mengikuti DEC-P19. URL baru diverifikasi: health
+  merespons `phase:report`, `backendConfigured:false` (sama seperti sebelumnya).
+
+Belum dijalankan / belum terverifikasi:
+- Pengujian browser tab Laporan (filter, paginasi, unduhan Blob CSV).
+- Integrasi runtime Apps Script penuh (butuh `SPREADSHEET_ID` — DEC-P08);
+  endpoint health sudah diverifikasi merespons (lihat Tambahan pasca-phase).
+- Performa laporan pada volume data besar (query penuh per rentang).
+
+Status: **SELESAI (lokal)** — jangan mulai PHASE 6 tanpa instruksi.

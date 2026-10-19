@@ -58,8 +58,8 @@
 | DEC-P04 | AMB-15/16/17 | Skema data & format waktu | MENUNGGU |
 | DEC-P05 | AMB-11/12 | Aturan susulan | MENUNGGU |
 | DEC-P06 | AMB-18 | Retensi data | MENUNGGU |
-| DEC-P07 | AMB-19 | Laporan & ekspor | MENUNGGU |
-| DEC-P08 | AMB-23 | Nilai konfigurasi resource | MENUNGGU |
+| DEC-P07 | AMB-19 | Laporan & ekspor | DISETUJUI 2026-10-19 |
+| DEC-P08 | AMB-23 | Nilai konfigurasi resource | MENUNGGU (sebagian: URL deployment dikonfirmasi via DEC-P19; `SPREADSHEET_ID`/`DRIVE_FOLDER_ID` belum) |
 | DEC-P09 | AMB-05 | **D1** penyimpanan token sesi (memori/sessionStorage/localStorage/ubah arsitektur) | DISETUJUI 2026-10-15 |
 | DEC-P10 | AMB-03 | **D2** metode penyimpanan & verifikasi PIN (PBKDF2 buatan sendiri / SHA-256+lockout / layanan eksternal) | DISETUJUI 2026-10-15 |
 | DEC-P11 | AMB-04 | **D3** ambang & durasi lockout | DISETUJUI 2026-10-15 |
@@ -141,3 +141,46 @@ Sumber: jawaban pengguna atas pertanyaan D0–D8 (lihat `docs/PHASE2_AUDIT.md`).
 - Alasan: implementasi lebih sederhana, validasi jelas, tidak bergantung pada
   daftar hari libur yang belum ditetapkan.
 - Sumber: instruksi pengguna, TEST_PLAN.md AMB-10.
+
+### DEC-P07 — Laporan & format ekspor (AMB-19)
+- Tanggal: 2026-10-19; Status: DISETUJUI (sebagian — lihat butir 3)
+- Keputusan:
+  1. **Format ekspor: CSV saja** (jawaban pengguna atas pertanyaan pilihan format).
+     PDF/dimensi lain TIDAK diminta → TIDAK diimplementasikan. Tidak ada
+     dependensi baru; penulisan CSV di Apps Script + unduhan Blob di klien.
+  2. **Penerima laporan = admin.** Halaman laporan dirujuk pengguna sebagai
+     "laporan admin"; seluruh endpoint `report.*` memakai `requirePost_` +
+     `requireAdmin_` (peran dari sesi server, bukan klien).
+  3. **Isi rekap = fakta terhitung saja** (jumlah catatan masuk/pulang/total,
+     pegawai unik, pecahan mode kerja & sumber, status pengajuan susulan,
+     rekap per tanggal). Indikator kebijakan (terlambat, tidak hadir,
+     persentase kehadiran, hari kerja efektif) **TIDAK ditampilkan** karena
+     aturannya masih `BELUM DITETAPKAN` (AMB-19 bagian "isi rekap" bagian
+     aturan tetap menunggu keputusan tersendiri).
+- Asumsi teknis sementara (bukan keputusan pengguna; ditandai eksplisit di kode):
+  - Rentang laporan maksimum **92 hari** per permintaan (`REPORT_MAX_RANGE_DAYS`).
+  - Ekspor maksimum **5000 baris** (`REPORT_EXPORT_MAX_ROWS`); kelebihan →
+    error `EXPORT_TOO_LARGE` (tidak dipotong diam-diam).
+  - Paginasi daftar: default 50, maksimum 200 baris per halaman.
+  Nilai-nilai ini dapat diubah bila ada masukan pengguna.
+- Sumber: instruksi pengguna (phase 5: laporan admin + ekspor), jawaban
+  question tool 2026-10-19 (format CSV).
+
+### DEC-P19 — URL deployment Apps Script (AMB-23 sebagian, FD-09)
+- Tanggal: 2026-10-19; Status: DISETUJUI (berdasarkan jawaban pengguna)
+- Keputusan:
+  - Nilai `API_BASE_URL` di `assets/js/config.js` dikonfirmasi pengguna sebagai
+    URL Web App Apps Script yang benar dan disengaja. Nilai terkini (redploy/
+    pembaruan pengguna, 2026-10-19):
+    `https://script.google.com/macros/s/AKfycbx-eQ5Xx5mHTSXDbKyjd8bpyGN1dxnMfU_rLKuHCGiMLWaaLhzvG20D3img9-KvGs1u/exec`
+    (nilai sebelumnya diganti mengikuti instruksi pengguna "Api baru"; format
+    & sifatnya sama — URL Web App Apps Script).
+  - Tes fondasi FD-09 disesuaikan: mensyaratkan `API_BASE_URL` berformat URL
+    Web App Apps Script yang valid (bukan lagi "harus kosong").
+  - Verifikasi awal (2026-10-19): `GET ?action=health` pada URL terkini
+    merespons `{"ok":true,"phase":"report","backendConfigured":false,...}`.
+- Yang TIDAK termasuk (tetap menunggu DEC-P08):
+  - `SPREADSHEET_ID` & `DRIVE_FOLDER_ID` — belum dikonfigurasi di Script
+    Properties (`backendConfigured:false`); jangan mengarang nilai.
+- Sumber: instruksi pengguna (menyertakan URL API & pembaruan URL), cek langsung
+  endpoint.

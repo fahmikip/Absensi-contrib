@@ -116,6 +116,12 @@ function route_(action, payload, method) {
       return handleAdminSusulanDecide_(payload, method);
     case 'admin.log.list':
       return handleAdminLogList_(payload, method);
+    case 'report.absensi.list':
+      return handleReportAbsensiList_(payload, method);
+    case 'report.rekap':
+      return handleReportRekap_(payload, method);
+    case 'report.absensi.exportCsv':
+      return handleReportAbsensiExportCsv_(payload, method);
     default:
       return {
         ok: false,
@@ -133,7 +139,7 @@ function handleHealth_() {
   return {
     ok: true,
     service: 'absensi-kpu-aceh-selatan',
-    phase: 'admin',
+    phase: 'report',
     timezone: getAppTimezone_(),
     backendConfigured: isBackendConfigured_(),
     officeLocationConfigured: isOfficeLocationConfigured_(),

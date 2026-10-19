@@ -677,10 +677,10 @@ check('doPost aksi admin tanpa token → JSON UNAUTHORIZED (bukan crash)', () =>
   eq('status', parsed.status, 'error');
   return true;
 });
-check('health phase = admin (PHASE 4)', () => {
+check('health phase = report (PHASE 5)', () => {
   const { env } = envAdmin();
   const h = env.sandbox.handleHealth_();
-  eq('phase', h.phase, 'admin');
+  eq('phase', h.phase, 'report');
   return true;
 });
 check('initializeSheets membuat sheet PengajuanSusulan dengan header §8', () => {

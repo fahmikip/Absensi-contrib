@@ -396,7 +396,7 @@ check('route_ health ok & phase admin', () => {
   const { sandbox } = createEnv();
   const res = sandbox.route_('health', {}, 'GET');
   if (!res.ok) throw new Error('health gagal');
-  if (res.phase !== 'admin') throw new Error('phase salah: ' + res.phase);
+  if (res.phase !== 'report') throw new Error('phase salah: ' + res.phase);
   return true;
 });
 check('route_ aksi tak dikenal', () => {

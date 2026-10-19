@@ -784,7 +784,7 @@ check('route_ attendance.submit terhubung', () => {
 check('health phase admin + officeLocationConfigured', () => {
   const withOffice = envAttendance();
   const h1 = withOffice.env.sandbox.handleHealth_();
-  if (h1.phase !== 'admin') throw new Error('phase ' + h1.phase);
+  if (h1.phase !== 'report') throw new Error('phase ' + h1.phase);
   if (h1.officeLocationConfigured !== true) throw new Error('koordinat harus true');
   const noOffice = envAttendance({ office: false });
   if (noOffice.env.sandbox.handleHealth_().officeLocationConfigured !== false) {

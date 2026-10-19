@@ -50,6 +50,7 @@ console.log('== Struktur berkas ==');
   'assets/js/camera.js',
   'assets/js/attendance.js',
   'assets/js/admin.js',
+  'assets/js/report.js',
   'assets/icons/icon-192.png',
   'assets/icons/icon-512.png',
   '.gitignore',
@@ -64,12 +65,13 @@ console.log('== Struktur berkas ==');
   'gas/Drive.gs',
   'gas/Attendance.gs',
   'gas/AdminService.gs',
+  'gas/ReportService.gs',
   'gas/appsscript.json',
   'gas/README.md'
 ].forEach((f) => check('ada: ' + f, () => existsSync(abs(f))));
 
 console.log('== Sintaks JavaScript frontend ==');
-['assets/js/config.js', 'assets/js/api.js', 'assets/js/app.js', 'assets/js/auth.js', 'assets/js/admin.js', 'service-worker.js'].forEach((f) => {
+['assets/js/config.js', 'assets/js/api.js', 'assets/js/app.js', 'assets/js/auth.js', 'assets/js/admin.js', 'assets/js/report.js', 'service-worker.js'].forEach((f) => {
   check('sintaks: ' + f, () => {
     execFileSync(process.execPath, ['--check', abs(f)]);
     return true;
@@ -77,7 +79,7 @@ console.log('== Sintaks JavaScript frontend ==');
 });
 
 console.log('== Sintaks Apps Script (.gs) ==');
-['gas/Code.gs', 'gas/Config.gs', 'gas/Auth.gs', 'gas/Repo.gs', 'gas/AuthService.gs', 'gas/AdminService.gs', 'gas/Bootstrap.gs'].forEach((f) => {
+['gas/Code.gs', 'gas/Config.gs', 'gas/Auth.gs', 'gas/Repo.gs', 'gas/AuthService.gs', 'gas/AdminService.gs', 'gas/ReportService.gs', 'gas/Bootstrap.gs'].forEach((f) => {
   check('sintaks: ' + f, () => {
     const tmp = join(tmpdir(), 'check-' + f.replace(/[\\/]/g, '_') + '.js');
     copyFileSync(abs(f), tmp);
@@ -137,6 +139,7 @@ const frontendFiles = [
   'assets/js/app.js',
   'assets/js/auth.js',
   'assets/js/admin.js',
+  'assets/js/report.js',
   'service-worker.js'
 ];
 const secretPatterns = [
@@ -157,11 +160,14 @@ frontendFiles.forEach((f) => {
   });
 });
 
-check('API_BASE_URL masih kosong (backend belum dikonfigurasi)', () => {
+check('API_BASE_URL = URL Web App Apps Script yang valid (dikonfirmasi pengguna)', () => {
   const text = readFileSync(abs('assets/js/config.js'), 'utf8');
-  const m = text.match(/API_BASE_URL\s*:\s*['"]([^'\"]*)['"]/);
-  if (!m) throw new Error('API_BASE_URL tidak ditemukan');
-  if (m[1] !== '') throw new Error('API_BASE_URL seharusnya kosong (placeholder deployment tidak diizinkan oleh tes)');
+  const m = text.match(/API_BASE_URL\s*:\s*['"]([^'\"]+)['"]/);
+  if (!m) throw new Error('API_BASE_URL tidak ditemukan atau kosong');
+  const v = m[1];
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(v)) {
+    throw new Error('format bukan URL Web App Apps Script (harus https://script.google.com/macros/s/<ID>/exec)');
+  }
   return true;
 });
 
