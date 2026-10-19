@@ -53,11 +53,12 @@ Google Apps Script → Google Sheets + Google Drive privat. Zona waktu `Asia/Jak
 ## Blocker Aktif (jangan diimplementasikan sebelum dijawab)
 - **Benchmark iterasi PBKDF2 di runtime Apps Script nyata** (D2) — nilai 10000
   masih sementara.
-- Koordinat kantor (AMB-07/DEC-P20): titik & radius 50 m sudah ditetapkan
-  pengguna, tetapi **belum disimpan di Script Properties** → `officeLocationConfigured:false`
-  dan WFO `OFFICE_NOT_CONFIGURED`. Nilai hanya di Script Properties (tidak di repo).
 - Integrasi runtime/browser dengan akun nyata (login/absensi/laporan, GPS WFO,
-  PWA/SW) **belum dijalankan** meski `backendConfigured:true`.
+  PWA/SW) **belum dijalankan** meski `backendConfigured` & `officeLocationConfigured`
+  sudah `true`.
+- Koordinat kantor (AMB-07/DEC-P20): **sudah tersimpan di Script Properties**
+  (titik & radius 50 m) — health 2026-10-19 `officeLocationConfigured:true`.
+  Nilai hanya di Script Properties (tidak di repo); jangan ubah tanpa instruksi.
 - Penerbitan/reset PIN (AMB-01/02) → D5 (ditunda). `admin.account.resetPin`
   sengaja mengembalikan `NOT_AVAILABLE`.
 - AMB-11/12 (aturan susulan), AMB-20 (akses foto admin), AMB-14 (impor),
@@ -68,8 +69,8 @@ Google Apps Script → Google Sheets + Google Drive privat. Zona waktu `Asia/Jak
 - Jangan mulai PHASE 7 (atau fitur baru) tanpa instruksi; PHASE 6 sudah STOP.
 
 ## Catatan Runtime (2026-10-19)
-- `API_BASE_URL` diperbarui ke URL Web App terbaru pengguna (DEC-P19); versi aset
-  dinaikkan ke `0.6.0`.
+- `API_BASE_URL` diperbarui ke URL Web App terbaru pengguna (DEC-P21); versi aset
+  dinaikkan ke `0.6.1` agar service worker menarik `config.js` terbaru.
 - **UI 0.6.0**: app shell mobile (app bar + bilah navigasi bawah
   Beranda/Absensi/Admin/Profil) via `assets/js/nav.js`; `index.html`,
   `assets/css/styles.css` dirombak. Hook JS (ID/kelas `att-*`, `admin-*`,
@@ -78,9 +79,9 @@ Google Apps Script → Google Sheets + Google Drive privat. Zona waktu `Asia/Jak
   ditambahkan (memperbaiki langkah absensi yang sebelumnya bisa saling tampil).
 - Health live URL terbaru: `backendConfigured:true` (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID`
   sudah diisi di Script Properties — DEC-P20, nilai tidak di repo),
-  `officeLocationConfigured:false` (koordinat AMB-07 belum disimpan).
+  `officeLocationConfigured:true` (koordinat AMB-07 sudah tersimpan, 2026-10-19).
 - Probe `POST action=login` (NIP sintetis) → `AUTH_FAILED` → sheet `Akun` sudah ada.
-- Frontend live: `https://kipasel.github.io/Absensi/` (HTTP 200, versi 0.6.0);
+- Frontend live: `https://kipasel.github.io/Absensi/` (HTTP 200, versi 0.6.1);
   uji browser nyata belum dijalankan.
 
 ## Format Laporan Phase

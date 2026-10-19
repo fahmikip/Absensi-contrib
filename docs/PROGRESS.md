@@ -410,3 +410,29 @@ fungsi kamera/GPS/service worker tetap belum diuji runtime.
 
 Status: implementasi **selesai (lokal)**; uji browser nyata menyusul. Rilis tetap
 **BELUM SIAP RILIS** karena alasan konfigurasi/uji (lihat PHASE 6).
+
+## Pasca-PHASE 6 — Pembaruan API & lokasi kantor (0.6.1) (2026-10-19)
+
+Permintaan pengguna: "update API <URL /exec baru>" (DEC-P21).
+
+Perubahan:
+- `assets/js/config.js` — `API_BASE_URL` diganti ke Web App terbaru
+  (DEC-P21) dan `VERSION` `0.6.0` → `0.6.1`.
+- `service-worker.js` — `CACHE_VERSION` `app-v0.6.1`.
+- Dokumentasi: `README.md`, `AGENTS.md`, `docs/DECISIONS.md` (DEC-P21;
+  DEC-P19 ditandai digantikan), `docs/DEPLOYMENT.md` (E/F).
+
+Verifikasi langsung (2026-10-19, URL terbaru):
+- POST `{"action":"health"}` → `{"status":"ok","ok":true,"phase":"report",
+  "timezone":"Asia/Jakarta","backendConfigured":true,
+  "officeLocationConfigured":true,"serverTime":"2026-10-19T07:57:04.018Z"}`.
+  → **AMB-07/DEC-P20 kini diverifikasi: koordinat kantor tersimpan.**
+- POST `action=login` (NIP sintetis) → `AUTH_FAILED` → sheet `Akun` ada.
+- `GET ?action=health` tanpa body tidak merespons — verifikasi wajib via POST
+  (dicatat di `docs/DEPLOYMENT.md` E).
+
+Pengujian: `node tests/check-foundation.mjs` → **67 lulus, 0 gagal** (termasuk
+keselarasan `VERSION == CACHE_VERSION` dan format `API_BASE_URL`).
+
+Sisa blocker rilis: **uji integrasi/browser nyata** (login & absensi akun nyata,
+GPS WFO, kamera, PWA/SW, ekspor CSV di perangkat) + benchmark PBKDF2 runtime (D2).

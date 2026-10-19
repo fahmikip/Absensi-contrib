@@ -7,17 +7,18 @@ Aplikasi absensi pegawai berbasis Progressive Web App (PWA).
 - **Database:** Google Sheets.
 - **Penyimpanan foto:** Google Drive privat.
 - **Zona waktu:** `Asia/Jakarta`.
-- **Versi aplikasi:** `0.6.0` (sumber: `assets/js/config.js`).
+- **Versi aplikasi:** `0.6.1` (sumber: `assets/js/config.js`).
 
 ## Status Proyek
 **PHASE 6 — QA rilis: selesai (lokal); BELUM SIAP RILIS.** Audit kode & keamanan
 dilakukan; 3 bug frontend diperbaiki (retry absensi, reset tombol kirim, penanganan
-sesi kedaluwarsa); seluruh suite uji lokal lulus (64/42/112/156/162). Verifikasi
+sesi kedaluwarsa); seluruh suite uji lokal lulus (67/42/112/156/162). Verifikasi
 nyata: backend Apps Script ter-deploy & health check `ok:true` dengan
-`backendConfigured:true` (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID` terisi — DEC-P08/DEC-P20);
+`backendConfigured:true` (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID` terisi — DEC-P08/DEC-P20)
+dan **`officeLocationConfigured:true`** (koordinat kantor tersimpan — AMB-07/DEC-P20);
 **GitHub Pages sudah aktif** — frontend live di `https://kipasel.github.io/Absensi/`
-(HTTP 200, versi 0.5.2). Rilis terblokir penyimpanan koordinat kantor di Script
-Properties (AMB-07) dan uji integrasi/browser nyata. Lihat `docs/PROGRESS.md`
+(HTTP 200, versi 0.6.1). Rilis terblokir **uji integrasi/browser nyata**
+(kamera/GPS/PWA/SW, login & absensi akun nyata). Lihat `docs/PROGRESS.md`
 & `docs/DEPLOYMENT.md`.
 
 **UI 0.6.0 (mobile app):** antarmuka dirombak menjadi app shell — app bar lengket

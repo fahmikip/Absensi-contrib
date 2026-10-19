@@ -167,7 +167,8 @@ Sumber: jawaban pengguna atas pertanyaan D0–D8 (lihat `docs/PHASE2_AUDIT.md`).
   question tool 2026-10-19 (format CSV).
 
 ### DEC-P19 — URL deployment Apps Script (AMB-23 sebagian, FD-09)
-- Tanggal: 2026-10-19; Status: DISETUJUI (berdasarkan jawaban pengguna)
+- Tanggal: 2026-10-19; Status: DISETUJUI (berdasarkan jawaban pengguna);
+  **nilai URL lama digantikan oleh DEC-P21** (2026-10-19).
 - Keputusan:
    - Nilai `API_BASE_URL` di `assets/js/config.js` dikonfirmasi pengguna sebagai
      URL Web App Apps Script yang benar dan disengaja. Nilai terkini (pembaruan
@@ -204,3 +205,24 @@ Sumber: jawaban pengguna atas pertanyaan D0–D8 (lihat `docs/PHASE2_AUDIT.md`).
   aturan susulan (AMB-11/12), akses foto admin (AMB-20), impor (AMB-14),
   retensi (AMB-18), notifikasi (AMB-25), indikator kebijakan laporan.
 - Sumber: instruksi pengguna 2026-10-19 (koordinat + radius 50 m), health check.
+
+### DEC-P21 — Pembaruan URL Web App & verifikasi lokasi kantor (AMB-07 selesai)
+- Tanggal: 2026-10-19; Status: DISETUJUI (instruksi pengguna + verifikasi langsung).
+- Keputusan:
+  - `API_BASE_URL` di `assets/js/config.js` diubah ke URL Web App terbaru
+    (sumber: instruksi pengguna "update API"):
+    `https://script.google.com/macros/s/AKfycbwugyBMKan9v3rHZECItwAmxtO0aOn5RVHClSNXQhSBq_Px61svqHSWXd00J8PGf8RZ/exec`
+    (URL publik, bukan rahasia; format & sifat sama dengan DEC-P19).
+  - Versi aset dinaikkan `0.6.0` → **`0.6.1`** (`config.js` VERSION ==
+    `service-worker.js` CACHE_VERSION `app-v0.6.1`) agar service worker menarik
+    `config.js` terbaru; `nav.js` ikut di daftar aset statis.
+  - **AMB-07 kini SELESAI diverifikasi:** health check URL terbaru
+    (POST `action=health`) mengembalikan `backendConfigured:true` dan
+    **`officeLocationConfigured:true`** (2026-10-19T07:57:04Z) → koordinat kantor
+    & radius sudah tersimpan di Script Properties; validasi GPS WFO aktif.
+  - Routing terverifikasi: POST `action=login` NIP sintetis → `AUTH_FAILED`
+    (bukan `NOT_CONFIGURED`) → sheet `Akun` ada. Catatan: `GET ?action=health`
+    tanpa body tidak merespons di deployment ini — verifikasi health harus via POST.
+- Yang TIDAK termasuk: nilai koordinat/ID resource tetap di Script Properties
+  (kebijakan `docs/DEPLOYMENT.md` §A); belum ada uji browser/absensi nyata.
+- Sumber: instruksi pengguna 2026-10-19 (URL API baru), cek langsung endpoint.

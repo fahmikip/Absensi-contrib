@@ -62,13 +62,16 @@ tetap wajib memverifikasi identitas & peran di backend.
 ## E. Menguji Akses Resource (setelah dikonfigurasi)
 1. Buka `https://script.google.com/macros/s/<ID>/exec?action=health`.
 2. Respons yang benar: JSON dengan `"ok": true` dan `"backendConfigured": true`.
+   Catatan (2026-10-19): pada deployment ini `GET ?action=health` tanpa body
+   **tidak** merespons; health harus diverifikasi via **POST** body
+   `{"action":"health"}` lalu ikuti redirect 302 (GET ke `Location`).
 3. Bila `backendConfigured: false`, properti `SPREADSHEET_ID`/`DRIVE_FOLDER_ID`
    belum diisi.
 4. Uji login dengan akun admin hasil `seedAdmin()`.
-   **Status verifikasi PHASE 6 (2026-10-19):** health check merespons `ok:true`,
-   `phase:report`, `backendConfigured:true` (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID`
-   terisi; sheet `Akun` terverifikasi ada), `officeLocationConfigured:false`
-   (koordinat belum disimpan di Script Properties). Uji login/absensi/laporan
+   **Status verifikasi (2026-10-19, URL terbaru — DEC-P21):** health check merespons
+   `ok:true`, `phase:report`, `backendConfigured:true`,
+   **`officeLocationConfigured:true`** (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID` & koordinat
+   kantor tersimpan; sheet `Akun` terverifikasi ada). Uji login/absensi/laporan
    penuh dengan akun nyata **belum dijalankan**.
 
 ## F. Deploy Frontend ke GitHub Pages
@@ -80,7 +83,7 @@ tetap wajib memverifikasi identitas & peran di backend.
    **Status verifikasi PHASE 6 (2026-10-19):** Pages diaktifkan (branch `master`,
    root `/`). `GET https://kipasel.github.io/Absensi/` → **200**; aset
    `config.js`/`service-worker.js`/`manifest.webmanifest` → 200; versi tersaji
-   `0.5.2`. Uji browser nyata (kamera/GPS/SW) **belum dijalankan**.
+   `0.6.1`. Uji browser nyata (kamera/GPS/SW) **belum dijalankan**.
 
 ## G. Memisahkan Lingkungan Uji dan Produksi
 - Gunakan Spreadsheet, folder Drive, dan proyek Apps Script **terpisah** untuk uji
