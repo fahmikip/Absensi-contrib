@@ -94,6 +94,8 @@ function route_(action, payload, method) {
       return handleResetPin_(payload, method);
     case 'attendance.submit':
       return handleAttendanceSubmit_(payload, method);
+    case 'susulan.submit':
+      return handleSusulanSubmit_(payload, method);
     case 'admin.pegawai.list':
       return handleAdminPegawaiList_(payload, method);
     case 'admin.pegawai.detail':
@@ -108,10 +110,14 @@ function route_(action, payload, method) {
       return handleAdminAbsensiList_(payload, method);
     case 'admin.absensi.detail':
       return handleAdminAbsensiDetail_(payload, method);
+    case 'admin.absensi.photo':
+      return handleAdminAbsensiPhoto_(payload, method);
     case 'admin.susulan.list':
       return handleAdminSusulanList_(payload, method);
     case 'admin.susulan.detail':
       return handleAdminSusulanDetail_(payload, method);
+    case 'admin.susulan.photo':
+      return handleAdminSusulanPhoto_(payload, method);
     case 'admin.susulan.decide':
       return handleAdminSusulanDecide_(payload, method);
     case 'admin.log.list':

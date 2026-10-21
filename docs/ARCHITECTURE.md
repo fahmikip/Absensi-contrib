@@ -87,9 +87,18 @@ Google Apps Script Web App  (doGet/doPost; satu-satunya lapisan tepercaya)
   ditetapkan); tidak ada endpoint pengambilan foto.
 
 ## Google Drive
-- Struktur privat: `ABSENSI_KPU/YYYY/MM/Foto_Masuk|Foto_Pulang/`.
+- Struktur privat (DEC-P29):
+  `ABSENSI_KPU/YYYY/MM_NamaBulan/DD/NamaPegawai_IDPegawai/Absen_Masuk.jpg` &
+  `Absen_Pulang.jpg`. Contoh: `ABSENSI_KPU/2026/10_Oktober/21/Andi_00123/`
+  (ilustrasi, bukan data nyata). Nama folder bulan `MM_NamaBulan` (Indonesia);
+  folder pegawai memakai `Nama_IDPegawai` (ID internal sebagai kunci).
+- Foto susulan: `ABSENSI_KPU/YYYY/MM_NamaBulan/Foto_Susulan/` (DEC-P24).
+- `gas/Drive.gs` menyediakan `monthFolderName_`/`pegawaiFolderName_`/
+  `sanitizePathSegment_` (fungsi murni) agar format folder konsisten; folder
+  dibuat otomatis & dipakai ulang (`getOrCreateSubfolder_`).
+- `path` folder dicatat di sheet `BuktiAbsensi`; `drive_file_id` tetap
+  referensi utama. Nilai hanya di Script Properties (tidak di repo).
 - Referensi file (ID, path, tanggal, jenis) disimpan di `BuktiAbsensi`.
-- Belum ada folder yang dibuat pada PHASE 1.
 
 ## Batasan Arsitektur yang Diakui
 - Google Sheets bukan DB transaksional penuh (tanpa foreign key/transaksi kuat) → mitigasi rencana: `LockService`, kunci unik, validasi ulang.

@@ -31,13 +31,13 @@ Lihat `docs/PHASE2_AUDIT.md` §2 untuk sumber dan implikasi.
 | T-03 | Manipulasi jam perangkat | Absensi di luar jam | Server memakai waktu server `Asia/Jakarta`, bukan klien | Belum diterapkan |
 | T-04 | Manipulasi parameter ID pegawai | Akses/pengubahan data pegawai lain | Otorisasi per-identitas di backend; token sesi terikat ke pegawai | Sebagian (admin: ID diverifikasi terhadap sheet, bukan klien; akses pegawai-sendiiri belum) |
 | T-05 | Akses data lintas pegawai | Kebocoran data pribadi | Backend hanya mengembalikan data milik pemanggil (kecuali admin) | Sebagian (endpoint admin ber-otorisasi; endpoint data pegawai non-admin belum ada) |
-| T-06 | Akses foto via tautan publik | Foto privat bocor | Drive privat; dilarang anyone-with-link; akses via backend ber-otorisasi (AMB-20) | Sebagian (tanggap admin TANPA `drive_file_id`/URL; endpoint foto sengaja belum ada) |
-| T-07 | Penyalahgunaan endpoint admin | Manipulasi data | Cek peran admin di backend setiap request (jangan percaya klien) | Sebagian (**PHASE 4: 11 endpoint `requireAdmin_`, diuji lokal 156 cek LULUS; runtime & browser belum**) |
-| T-08 | Permintaan ganda / race condition | Duplikasi absensi | `LockService` + kunci unik (pegawai+tanggal+jenis); idempotency | Sebagian (tulisan absensi & admin dibungkus lock di kode; keputusan susulan ganda → CONFLICT; uji runtime belum) |
+| T-06 | Akses foto via tautan publik | Foto privat bocor | Drive privat; dilarang anyone-with-link; akses via backend ber-otorisasi (AMB-20/DEC-P25) | Sebagian (tanggap admin TANPA `drive_file_id`/URL; endpoint foto blob ber-token; runtime belum) |
+| T-07 | Penyalahgunaan endpoint admin | Manipulasi data | Cek peran admin di backend setiap request (jangan percaya klien) | Sebagian (**PHASE 4: 11 endpoint `requireAdmin_`, diuji lokal 171 cek LULUS; runtime & browser belum**) |
+| T-08 | Permintaan ganda / race condition | Duplikasi absensi | `LockService` + kunci unik (pegawai+tanggal+jenis); idempotency; nama file tetap | Sebagian (tulisan absensi & admin dibungkus lock di kode; keputusan susulan ganda → CONFLICT; uji runtime belum) |
 | T-09 | Penyalahgunaan token/sesi | Akses tidak sah | Token acak kuat, disimpan sebagai hash, masa berlaku, revoke saat logout | Sebagian (kode; token di memori D1) |
 | T-10 | Kebocoran konfigurasi/log | Eksposur resource | Secrets via Script Properties; log tanpa data pribadi/PIN/token | Sebagian (kode + uji lokal LULUS; log admin diuji tanpa token/PIN) |
 | T-11 | Perubahan/penghapusan tanpa jejak | Tidak dapat diaudit | `LogAktivitas` append-only dengan aktor & waktu | Sebagian (login/logout/akun + **aksi pegawai & keputusan susulan (PHASE 4)** dicat; kode) |
-| T-12 | Kegagalan parsial Drive↔Sheets | Data tak konsisten | Urutan tulis & kompensasi; tandai status "perlu ditindaklanjuti"; jangan klaim berhasil | Belum diterapkan |
+| T-12 | Kegagalan parsial Drive↔Sheets | Data tak konsisten | Urutan tulis & kompensasi; tandai status "perlu ditindaklanjuti"; jangan klaim berhasil | Sebagian (absensi: gagal Drive → tidak menulis apa pun; gagal Sheets → bukti dikompensasi, file orphan dicatat, respons `ATTENDANCE_STORAGE_PARTIAL`; TIDAK ada transaksi atomik) |
 | T-13 | CORS / endpoint Apps Script publik | Request dari domain tak dikenal | Batasi/validasi Origin; token wajib (terkait AMB-21) | Belum diterapkan (D8 `ANYONE_ANONYMOUS`; validasi Origin belum) |
 
 ## Hasil Tinjauan Keamanan PHASE 1
@@ -97,8 +97,9 @@ Kontrol di `gas/AdminService.gs` (semua aksi `admin.*`):
 - **Rahasia tidak dikirim:** `pin_hash`/`pin_salt` tidak pernah masuk respons
   pegawai; log admin diuji tanpa token/PIN mentah.
 - **Foto:** respons absensi/susulan hanya metadata bukti (ada/mime/ukuran/path);
-  `drive_file_id`/URL TIDAK dikirim — akses foto menunggu AMB-20; tidak ada
-  endpoint foto sama sekali.
+  `drive_file_id`/URL TIDAK dikirim; akses foto lewat endpoint blob ber-token
+  admin (`admin.absensi.photo`, `admin.susulan.photo`; DEC-P25) — tanpa tautan
+  publik, file dibuat privat (`setSharing` defensif).
 - **Keputusan susulan:** hanya admin sesi; status awal wajib `menunggu`
   (keputusan ganda → `CONFLICT`); `waktu_keputusan` dari server; `id_admin`
   = id_akun pemutus; seluruh keputusan tercatat di `LogAktivitas`.
@@ -188,3 +189,22 @@ Risiko yang masih DIAKUI (belum dapat dihilangkan, dicatat apa adanya):
 Kesimpulan audit: tidak ditemukan celah autentikasi/otorisasi/kebocoran rahasia
 yang tidak diketahui. Rilis tetap terblokir oleh **konfigurasi**, bukan kerentanan
 baru: `SPREADSHEET_ID` (DEC-P08), koordinat kantor (AMB-07), benchmark PBKDF2 (D2).
+
+## Struktur Penyimpanan Foto (DEC-P29) — tinjauan keamanan
+- Struktur: `ABSENSI_KPU/{TAHUN}/{MM_NamaBulan}/{DD}/{NamaPegawai_IDPegawai}/`
+  dengan nama file tetap `Absen_Masuk.jpg`/`Absen_Pulang.jpg`.
+- **Privasi:** file tetap dibuat privat; `setSharing(ANYONE_WITH_LINK, NONE)`
+  dipanggil defensif; tidak ada URL foto di respons manapun; admin mengakses
+  lewat endpoint blob ber-token (DEC-P25).
+- **Sanitasi nama:** `sanitizePathSegment_` mengganti `\ / : * ? " < > |` &
+  karakter kontrol → mencegah injeksi path/karakter aneh dari nama pegawai.
+  ID internal disertakan sehingga nama pegawai yang sama tidak tertukar.
+- **Anti-duplikat:** nama file tetap + prasyarat satu masuk/satu pulang per
+  pegawai per tanggal + idempotensi `id_absensi` + `withLock_`. (T-08)
+- **Kegagalan parsial (T-12):** gagal Drive → tidak ada tulisan sama sekali
+  (`ATTENDANCE_NOT_STORED`); gagal Sheets setelah file dibuat → baris bukti
+  dikompensasi, file **tidak** dihapus & dicatat sebagai orphan
+  (`orphan_drive_file=…`) untuk rekonsiliasi; respons `ATTENDANCE_STORAGE_PARTIAL`.
+  Google Sheets & Drive **bukan** transaksi atomik — konsistensi didekati, bukan
+  dijamin.
+- **Retensi:** foto lama berstruktur lama tidak dipindah/dihapus (DEC-P26).

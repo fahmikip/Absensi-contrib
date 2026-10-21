@@ -124,6 +124,7 @@ function handleAttendanceSubmit_(payload, method) {
       saved = saveAttendancePhoto_({
         idAbsensi: idAbsensi,
         idPegawai: idPegawai,
+        idPegawaiNama: ctx.pegawai.nama,
         tanggal: tanggal,
         jenis: jenis,
         bytes: fotoBytes

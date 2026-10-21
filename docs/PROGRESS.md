@@ -465,3 +465,101 @@ Perubahan (hanya CSS + warna sistem; **tanpa perubahan JS/ID/logika**):
 Validasi: seluruh kelas yang di-set JS (19 pola) tetap ada di CSS; ID tetap
 utuh; `node tests/check-foundation.mjs` **67 lulus, 0 gagal** (sintaks + versi
 selaras + scan rahasia). Uji visual di browser/perangkat **belum dilakukan**.
+
+## Pasca-PHASE 6 — Keputusan tertunda & fitur susulan (2026-10-21)
+
+Instruksi pengguna: jawab keputusan tertunda, jalankan uji integrasi (sebisanya),
+siapkan rilis. Keputusan baru **DEC-P22..P28** dicatat (lihat `docs/DECISIONS.md`).
+
+Perubahan:
+- **PIN admin (DEC-P22):** buat akun & reset PIN lewat panel — PIN **tepat 6
+  digit angka**, diketik admin saat create/reset. Reset PIN aktif (menggantikan
+  `NOT_AVAILABLE`), sekaligus membuka `gagal_login=0`/`terkunci_sampai=''`.
+  `gas/Auth.gs` (`PIN_DIGITS`/`PIN_PATTERN`/`isValidPin_`), `gas/AuthService.gs`
+  (`handleAccountCreate_`, `handleResetPin_`), UI `buildPinForm` di
+  `assets/js/admin.js`.
+- **Foto admin (AMB-20/DEC-P25):** endpoint blob ber-token
+  `admin.absensi.photo` & `admin.susulan.photo` → base64+mime inline, **tanpa**
+  `drive_file_id`/URL. `gas/Drive.gs` (`readAttendancePhoto_`),
+  `gas/AdminService.gs` (2 handler), route `gas/Code.gs`, penampil
+  `appendPhotoViewer` + CSS `.admin-photo` di frontend.
+- **Pengajuan susulan pegawai (§8; DEC-P23/P24):** endpoint `susulan.submit`
+  baru — file `gas/Susulan.gs` (rentang tanggal ≤3 hari lampau & bukan
+  mendatang; alasan wajib ≤500 karakter; foto JPEG wajib; simpan
+  `PengajuanSusulan` + foto ke folder `Foto_Susulan`; duplikat menunggu/diterima
+  → `DUPLICATE`; kompensasi hapus file bila tulis baris gagal). Route
+  `gas/Code.gs`; `saveSusulanPhoto_` di `gas/Drive.gs`. Frontend: form di
+  `index.html` + `assets/js/susulan.js` (konversi foto ke JPEG via kanvas,
+  batas tanggal di klien sinkron backend). Keputusan admin tetap **tidak**
+  menulis baris Absensi (DEC-P24).
+- **Retensi (DEC-P26):** simpan permanen. Impor CSV (AMB-14) & notifikasi
+  (AMB-25) **dikesampingkan** untuk rilis ini (DEC-P27). Laporan tetap fakta
+  tanpa indikator kebijakan (DEC-P28).
+- Versi: `assets/js/config.js` `VERSION` `0.6.2` → `0.6.3`; `service-worker.js`
+  `CACHE_VERSION` `app-v0.6.3`; `susulan.js` masuk precache & daftar aset.
+- Perbaikan harness: `getId()` stub Drive kini stabil (sebelumnya menghasilkan
+  ID baru tiap panggilan sehingga pembacaan foto gagal).
+
+Validasi otomatis (Node + stub, BUKAN runtime/browser nyata):
+- `node tests/check-foundation.mjs` → **71 lulus, 0 gagal**
+- `node tests/auth.test.mjs` → **56 lulus, 0 gagal**
+- `node tests/attendance.test.mjs` → **112 lulus, 0 gagal**
+- `node tests/admin.test.mjs` → **171 lulus, 0 gagal**
+- `node tests/report.test.mjs` → **162 lulus, 0 gagal**
+- `node tests/susulan.test.mjs` (baru) → **67 lulus, 0 gagal**
+
+Belum diverifikasi: integrasi runtime/browser nyata (login/absensi/susulan/
+laporan, GPS WFO, PWA/SW, foto admin, unggah foto), benchmark PBKDF2 (D2).
+Status rilis: **BELUM SIAP RILIS** — menunggu uji integrasi & browser nyata.
+## Pasca-PHASE 6 — Struktur penyimpanan foto hierarkis (2026-10-21)
+
+Instruksi pengguna: ubah penyimpanan foto absensi menjadi hierarkis
+Tahun → Bulan → Tanggal → Nama Pegawai → Absen Masuk/Pulang. Keputusan
+**DEC-P29** dicatat (menggantikan struktur DEC-007).
+
+Perubahan (tanpa mengubah autentikasi/waktu/GPS/fitur lain):
+- `gas/Drive.gs` — struktur baru
+  `ABSENSI_KPU/{YYYY}/{MM_NamaBulan}/{DD}/{NamaPegawai_IDPegawai}/Absen_Masuk.jpg|Absen_Pulang.jpg`;
+  fungsi murni baru `sanitizePathSegment_`, `monthFolderName_` (bulan Indonesia),
+  `pegawaiFolderName_`; nama file tetap (`ATTENDANCE_FILE_NAMES`); `path`
+  metadata mengikuti struktur baru. Foto susulan tetap terpisah
+  (`.../{MM_NamaBulan}/Foto_Susulan/`).
+- `gas/Attendance.gs` — meneruskan `ctx.pegawai.nama` ke penyimpanan.
+- `tests/harness.mjs` — stub Drive kini melacak path folder & mendaftar folder
+  (untuk verifikasi hierarki, reuse, dan injeksi kegagalan).
+- `tests/attendance.test.mjs` — bagian baru "Struktur folder foto absensi
+  (DEC-P29)": penamaan bulan/pegawai, check-in/check-out, tanggal berbeda,
+  reuse folder, klik ganda/retry idempoten, kegagalan Drive, kegagalan Sheets,
+  privasi + byte utuh, aturan lama tetap berlaku.
+- `tests/admin.test.mjs` — path metadata & uji foto mengikuti struktur baru;
+  uji tambahan: detail absensi memakai path DEC-P29 & foto diambil via
+  `id_bukti` (terikat catatan absensi).
+- Dokumentasi: `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`,
+  `docs/DATA_DICTIONARY.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`,
+  `docs/TEST_PLAN.md`, `gas/README.md`, `AGENTS.md`.
+
+Pencegahan duplikasi: nama file tetap + prasyarat satu masuk/satu pulang per
+pegawai per tanggal + idempotensi `id_absensi` + `withLock_`. Kegagalan Drive →
+tanpa tulisan (tidak ada file kosong); kegagalan Sheets setelah file dibuat →
+bukti dikompensasi, file orphan dicatat (`orphan_drive_file=`), respons
+`ATTENDANCE_STORAGE_PARTIAL` (Sheets & Drive BUKAN transaksi atomik).
+
+Validasi otomatis (Node + stub, BUKAN runtime Drive nyata):
+- `check-foundation` 71/0 · `auth` 56/0 · `attendance` **157/0** (sebelumnya 112)
+  · `admin` **175/0** (sebelumnya 171) · `report` 162/0 · `susulan` 67/0.
+
+Belum diverifikasi: struktur folder pada Drive Apps Script nyata (DF-13);
+migrasi foto lama **tidak dilakukan** (foto lama dibiarkan, DEC-P26/DEC-P29).
+Status rilis: **BELUM SIAP RILIS**.
+
+## Pasca-PHASE 6 — Pembaruan URL Web App (0.6.4) (2026-10-21)
+
+Pengguna memberikan URL Web App terbaru (DEC-P21 diperbarui):
+`https://script.google.com/macros/s/AKfycbwuxePGOdVzWJeVKYcONaBzq5spIWa_cXfMlaKxMNZ3J-YkQZdCS2YsALc3zjL59ZU/exec`.
+- `assets/js/config.js` — `API_BASE_URL` diperbarui.
+- Versi dinaikkan `0.6.3` → `0.6.4` (`VERSION` & `CACHE_VERSION`) agar service
+  worker menarik `config.js` terbaru (menghindari URL lama dari cache).
+- Verifikasi `GET ?action=health` URL baru → `ok:true`, `backendConfigured:true`,
+  `officeLocationConfigured:true`, `phase:report`, `timezone:Asia/Jakarta`.
+- `node tests/check-foundation.mjs` → **71 lulus, 0 gagal** (FD-09 format URL valid,
+  versi config == CACHE_VERSION).

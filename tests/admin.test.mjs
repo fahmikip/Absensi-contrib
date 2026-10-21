@@ -86,8 +86,8 @@ function seedAbsensi(env, opts) {
     env.sandbox.appendObject_('BuktiAbsensi', {
       id_bukti: opts.idBukti || 'BKT-TEST-1',
       id_absensi: opts.id_absensi,
-      drive_file_id: 'DRV-ID-RAHASIA-TEST',
-      path: 'ABSENSI_KPU/2026/10/Foto_Masuk/',
+      drive_file_id: opts.drive_file_id || 'DRV-ID-RAHASIA-TEST',
+      path: 'ABSENSI_KPU/2026/10_Oktober/15/Pegawai_Uji_PEG-EMP-1/Absen_Masuk.jpg',
       mime: 'image/jpeg',
       ukuran: 12345,
       dibuat_pada: waktu
@@ -489,6 +489,26 @@ check('detail absensi tanpa bukti → bukti.ada false', () => {
   eq('ada', res.bukti.ada, false);
   return true;
 });
+check('detail absensi: metadata bukti memakai struktur folder DEC-P29', () => {
+  const { env, tokenAdmin } = envAdmin();
+  seedAbsensi(env, { id_absensi: 'ABS-TEST-1', id_pegawai: 'PEG-EMP-1' });
+  const res = env.sandbox.handleAdminAbsensiDetail_(
+    { token: tokenAdmin, id_absensi: 'ABS-TEST-1' }, 'POST');
+  const path = String(res.bukti.path || '');
+  if (path.indexOf('ABSENSI_KPU/2026/10_Oktober/15/') !== 0) throw new Error('path ' + path);
+  if (path.indexOf('/Absen_Masuk.jpg') === -1) throw new Error('nama file ' + path);
+  return true;
+});
+check('foto absensi diambil lewat id_bukti (terikat catatan absensi)', () => {
+  const { env, tokenAdmin } = envAdmin();
+  const fileId = seedDrivePhoto(env, [0xff, 0xd8, 0xff, 1, 2, 3]);
+  seedAbsensi(env, { id_absensi: 'ABS-TIE-1', id_pegawai: 'PEG-EMP-1', drive_file_id: fileId });
+  const photo = env.sandbox.handleAdminAbsensiPhoto_(
+    { token: tokenAdmin, id_absensi: 'ABS-TIE-1' }, 'POST');
+  eq('mime', photo.mime, 'image/jpeg');
+  eq('ukuran', photo.ukuran, 6);
+  return true;
+});
 check('detail absensi tak ada → NOT_FOUND; tanpa id → INVALID_INPUT', () => {
   const { env, tokenAdmin } = envAdmin();
   throwsCode('NOT_FOUND', () => {
@@ -653,6 +673,93 @@ check('limit log membatasi item', () => {
   return true;
 });
 
+/* ================= Foto admin (AMB-20 / DEC-P25) ================= */
+
+console.log('== Foto admin: endpoint blob ber-token ==');
+
+function seedDrivePhoto(env, bytes) {
+  const folder = env.sandbox.DriveApp.getFolderById('ROOT-UJI');
+  const blob = env.sandbox.Utilities.newBlob(bytes, 'image/jpeg', 'uji.jpg');
+  return folder.createFile(blob).getId();
+}
+
+check('foto absensi: otorisasi (UNAUTHORIZED/FORBIDDEN/METHOD_NOT_ALLOWED)', () => {
+  const { env, tokenEmp } = envAdmin();
+  throwsCode('tanpa token',
+    () => env.sandbox.handleAdminAbsensiPhoto_({ id_absensi: 'ABS-1' }, 'POST'),
+    'UNAUTHORIZED');
+  throwsCode('token pegawai',
+    () => env.sandbox.handleAdminAbsensiPhoto_({ token: tokenEmp, id_absensi: 'ABS-1' }, 'POST'),
+    'FORBIDDEN');
+  throwsCode('metode GET',
+    () => env.sandbox.handleAdminAbsensiPhoto_({ id_absensi: 'ABS-1' }, 'GET'),
+    'METHOD_NOT_ALLOWED');
+  return true;
+});
+
+check('foto absensi: isi foto kembali utuh tanpa referensi Drive', () => {
+  const { env, tokenAdmin } = envAdmin();
+  const bytes = [0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46];
+  const fileId = seedDrivePhoto(env, bytes);
+  seedAbsensi(env, { id_absensi: 'ABS-FOTO-1', id_pegawai: 'PEG-EMP-1', drive_file_id: fileId });
+  const res = env.sandbox.handleAdminAbsensiPhoto_(
+    { token: tokenAdmin, id_absensi: 'ABS-FOTO-1' }, 'POST');
+  if (!res.ok) throw new Error('gagal ambil foto');
+  eq('mime', res.mime, 'image/jpeg');
+  const decoded = Buffer.from(res.base64, 'base64');
+  if (decoded.length !== bytes.length) throw new Error('panjang byte berubah');
+  for (let i = 0; i < bytes.length; i++) {
+    if (decoded[i] !== bytes[i]) throw new Error('byte ' + i + ' berubah');
+  }
+  const text = JSON.stringify(res);
+  if (/drive_file_id|DRV-|"file_id"/.test(text)) throw new Error('File ID bocor di respons');
+  return true;
+});
+
+check('foto absensi: tanpa bukti / absensi tak ada → NOT_FOUND', () => {
+  const { env, tokenAdmin } = envAdmin();
+  seedAbsensi(env, { id_absensi: 'ABS-TANPA-FOTO', id_pegawai: 'PEG-EMP-1', denganBukti: false });
+  throwsCode('tanpa bukti',
+    () => env.sandbox.handleAdminAbsensiPhoto_(
+      { token: tokenAdmin, id_absensi: 'ABS-TANPA-FOTO' }, 'POST'),
+    'NOT_FOUND');
+  throwsCode('absensi tak ada',
+    () => env.sandbox.handleAdminAbsensiPhoto_(
+      { token: tokenAdmin, id_absensi: 'TIDAK-ADA' }, 'POST'),
+    'NOT_FOUND');
+  throwsCode('tanpa id',
+    () => env.sandbox.handleAdminAbsensiPhoto_({ token: tokenAdmin }, 'POST'),
+    'INVALID_INPUT');
+  return true;
+});
+
+check('foto susulan: isi foto kembali utuh + otorisasi & tanpa bukti', () => {
+  const { env, tokenAdmin, tokenEmp } = envAdmin();
+  const bytes = [0xff, 0xd8, 0xff, 0xe1, 0x08, 0x0c, 0x45, 0x78, 0x69, 0x66];
+  const fileId = seedDrivePhoto(env, bytes);
+  seedPengajuan(env, { id_pengajuan: 'PJN-FOTO-1', id_pegawai: 'PEG-EMP-1', bukti_file_id: fileId });
+  const res = env.sandbox.handleAdminSusulanPhoto_(
+    { token: tokenAdmin, id_pengajuan: 'PJN-FOTO-1' }, 'POST');
+  if (!res.ok) throw new Error('gagal ambil foto susulan');
+  const decoded = Buffer.from(res.base64, 'base64');
+  if (decoded.length !== bytes.length) throw new Error('panjang byte berubah');
+  if (JSON.stringify(res).includes(fileId)) throw new Error('File ID bocor');
+  throwsCode('token pegawai ditolak',
+    () => env.sandbox.handleAdminSusulanPhoto_(
+      { token: tokenEmp, id_pengajuan: 'PJN-FOTO-1' }, 'POST'),
+    'FORBIDDEN');
+  seedPengajuan(env, { id_pengajuan: 'PJN-NOFOTO', id_pegawai: 'PEG-EMP-2', bukti_file_id: '' });
+  throwsCode('tanpa bukti → NOT_FOUND',
+    () => env.sandbox.handleAdminSusulanPhoto_(
+      { token: tokenAdmin, id_pengajuan: 'PJN-NOFOTO' }, 'POST'),
+    'NOT_FOUND');
+  throwsCode('pengajuan tak ada → NOT_FOUND',
+    () => env.sandbox.handleAdminSusulanPhoto_(
+      { token: tokenAdmin, id_pengajuan: 'TIDAK-ADA' }, 'POST'),
+    'NOT_FOUND');
+  return true;
+});
+
 /* ================= Router & transport ================= */
 
 console.log('== Router & transport (Code.gs) ==');
@@ -675,6 +782,20 @@ check('doPost aksi admin tanpa token → JSON UNAUTHORIZED (bukan crash)', () =>
   const parsed = JSON.parse(out.getContent());
   eq('error', parsed.error, 'UNAUTHORIZED');
   eq('status', parsed.status, 'error');
+  return true;
+});
+check('route_ foto terhubung (bukan UNKNOWN_ACTION)', () => {
+  const { env } = envAdmin();
+  ['admin.absensi.photo', 'admin.susulan.photo'].forEach((action) => {
+    let code = null;
+    try {
+      env.sandbox.route_(action, {}, 'POST');
+    } catch (err) {
+      code = err && err.code;
+    }
+    if (code === 'UNKNOWN_ACTION') throw new Error(action + ' tidak terhubung');
+    if (code !== 'UNAUTHORIZED') throw new Error(action + ': ' + code);
+  });
   return true;
 });
 check('health phase = report (PHASE 5)', () => {

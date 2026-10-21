@@ -6,7 +6,7 @@
  * - Token sesi dikirim klien di body; disimpan sebagai hash (D1).
  * - PIN: PBKDF2-HMAC-SHA256 + salt unik (D2).
  * - Lockout: 5 gagal → 15 menit (D3).
- * - Penerbitan PIN awal DIPISAH dari PHASE 2 (D5) → reset PIN belum diaktifkan.
+ * - PIN awal & reset: admin mengetik PIN 6 digit (DEC-P22, menggantikan D5).
  *
  * Aturan: peran TIDAK pernah diambil dari klien; identitas dari sesi terverifikasi.
  */
@@ -150,14 +150,16 @@ function requireAdmin_(token) {
 /* ---------------- Manajemen akun (admin) ---------------- */
 
 /**
- * Membuat akun untuk pegawai yang sudah terdaftar. TIDAK menerbitkan PIN
- * (penerbitan kredensial dipisah, keputusan D5).
+ * Membuat akun untuk pegawai yang sudah terdaftar. PIN wajib diisi admin
+ * (6 digit angka, DEC-P22).
  */
 function handleAccountCreate_(payload, method) {
   requirePost_(method);
   var ctx = requireAdmin_(payload && payload.token);
   var idPegawai = payload.id_pegawai ? String(payload.id_pegawai) : '';
+  var pin = payload.pin !== undefined && payload.pin !== null ? String(payload.pin) : '';
   if (!idPegawai) throw AppError_('INVALID_INPUT', 'Data tidak lengkap.', true);
+  if (!isValidPin_(pin)) throw AppError_('INVALID_INPUT', 'PIN harus 6 digit angka.', true);
 
   return withLock_(function () {
     var pegawai = findPegawaiById_(idPegawai);
@@ -165,13 +167,14 @@ function handleAccountCreate_(payload, method) {
     if (findAkunByPegawaiId_(idPegawai)) {
       throw AppError_('DUPLICATE', 'Akun untuk pegawai ini sudah ada.', true);
     }
+    var rec = createPinRecord_(pin, pinKdfIterations_());
     var akun = {
       id_akun: newId_('AKN'),
       id_pegawai: idPegawai,
-      pin_hash: '',
-      pin_salt: '',
-      pin_algo: '',
-      pin_iterasi: '',
+      pin_hash: rec.hash,
+      pin_salt: rec.salt,
+      pin_algo: rec.algo,
+      pin_iterasi: rec.iterations,
       peran: 'pegawai',
       status_aktif: true,
       gagal_login: 0,
@@ -209,10 +212,34 @@ function handleAccountSetActive_(payload, method) {
   });
 }
 
-/** Reset PIN BELUM diaktifkan sampai keputusan D5. */
-function handleResetPin_() {
-  throw AppError_('NOT_AVAILABLE',
-    'Reset/penerbitan PIN belum diaktifkan (menunggu keputusan D5).', true);
+/**
+ * Reset PIN oleh admin (DEC-P22): PIN baru 6 digit; menghapus penghitung gagal
+ * & membuka kunci akun. Sesi yang sudah ada tidak dicabut.
+ */
+function handleResetPin_(payload, method) {
+  requirePost_(method);
+  var ctx = requireAdmin_(payload && payload.token);
+  var idAkun = payload.id_akun ? String(payload.id_akun) : '';
+  var pin = payload.pin !== undefined && payload.pin !== null ? String(payload.pin) : '';
+  if (!idAkun) throw AppError_('INVALID_INPUT', 'Data tidak lengkap.', true);
+  if (!isValidPin_(pin)) throw AppError_('INVALID_INPUT', 'PIN harus 6 digit angka.', true);
+
+  return withLock_(function () {
+    var akun = findAkunById_(idAkun);
+    if (!akun) throw AppError_('NOT_FOUND', 'Akun tidak ditemukan.', true);
+    var rec = createPinRecord_(pin, pinKdfIterations_());
+    akun.pin_hash = rec.hash;
+    akun.pin_salt = rec.salt;
+    akun.pin_algo = rec.algo;
+    akun.pin_iterasi = rec.iterations;
+    akun.gagal_login = 0;
+    akun.terkunci_sampai = '';
+    akun.diubah_pada = nowIso_();
+    akun.diubah_oleh = ctx.account.id_akun;
+    storeAkun_(akun);
+    logActivity_('pin_reset', ctx.account.id_akun, ctx.account.peran, 'akun', idAkun);
+    return { ok: true, id_akun: idAkun };
+  });
 }
 
 /* ---------------- Util internal ---------------- */

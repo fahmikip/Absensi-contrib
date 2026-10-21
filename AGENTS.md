@@ -36,18 +36,27 @@ Google Apps Script → Google Sheets + Google Drive privat. Zona waktu `Asia/Jak
   PHASE 5 (laporan & ekspor) **selesai (lokal)**. PHASE 6 (QA rilis) **selesai
   (lokal)**: audit kode & keamanan, 3 perbaikan frontend, verifikasi runtime.
   Keputusan rilis: **BELUM SIAP RILIS** (lihat `docs/PROGRESS.md` PHASE 6).
+- Pasca-PHASE 6 (2026-10-21): PIN admin 6 digit (buat/reset), endpoint foto admin
+  ber-token, pengajuan susulan pegawai (`susulan.submit`), retensi permanen;
+  keputusan DEC-P22..P28; suite uji jadi 6 berkas (tambah `tests/susulan.test.mjs`).
 - Keputusan D0–D8 sudah dijawab pengguna (lihat `docs/DECISIONS.md` DEC-P09..P16);
   aturan waktu & foto: DEC-P17/P18; ekspor **CSV saja** + laporan = admin:
   DEC-P07 (AMB-19 ANSWERED).
 - Kode: autentikasi (`gas/Auth*.gs`, `assets/js/auth.js`), absensi
-  (`gas/TimeRule.gs`, `Geo.gs`, `Drive.gs`, `Attendance.gs`; `assets/js/camera.js`,
-  `attendance.js`), panel admin (`gas/AdminService.gs`; `assets/js/admin.js`),
+  (`gas/TimeRule.gs`, `Geo.gs`, `Drive.gs`, `Attendance.gs`, `Susulan.gs`;
+  `assets/js/camera.js`,   `attendance.js`, `susulan.js`), panel admin (`gas/AdminService.gs`; `assets/js/admin.js`),
   laporan (`gas/ReportService.gs`; `assets/js/report.js`).
+  Struktur foto (DEC-P29): `ABSENSI_KPU/{YYYY}/{MM_NamaBulan}/{DD}/{Nama_ID}/`
+  dengan `Absen_Masuk.jpg`/`Absen_Pulang.jpg`.
   Keterbatasan terverifikasi: Apps Script tak punya cookie (`HttpOnly` tak
   tersedia) & tak punya KDF bawaan (PBKDF2 kode kustom, belum diaudit).
+- Fitur Pasca-PHASE 6 (2026-10-21, DEC-P22..P28): PIN admin 6 digit buat/reset,
+  endpoint foto admin ber-token, pengajuan susulan pegawai (`susulan.submit`),
+  retensi permanen. Impor CSV (AMB-14) & notifikasi (AMB-25) dikesampingkan.
 - Perintah uji: `node tests/check-foundation.mjs`, `node tests/auth.test.mjs`,
   `node tests/attendance.test.mjs`, `node tests/admin.test.mjs`,
-  `node tests/report.test.mjs`.
+  `node tests/report.test.mjs`, `node tests/susulan.test.mjs`.
+  Hasil terakhir: 71 / 56 / 157 / 175 / 162 / 67 — semua **0 gagal**.
 - Jalankan lokal: `py -m http.server 8765` lalu buka `http://127.0.0.1:8765/`.
 
 ## Blocker Aktif (jangan diimplementasikan sebelum dijawab)
@@ -59,18 +68,23 @@ Google Apps Script → Google Sheets + Google Drive privat. Zona waktu `Asia/Jak
 - Koordinat kantor (AMB-07/DEC-P20): **sudah tersimpan di Script Properties**
   (titik & radius 50 m) — health 2026-10-19 `officeLocationConfigured:true`.
   Nilai hanya di Script Properties (tidak di repo); jangan ubah tanpa instruksi.
-- Penerbitan/reset PIN (AMB-01/02) → D5 (ditunda). `admin.account.resetPin`
-  sengaja mengembalikan `NOT_AVAILABLE`.
-- AMB-11/12 (aturan susulan), AMB-20 (akses foto admin), AMB-14 (impor),
-  AMB-18 (retensi), AMB-25 (notifikasi) → belum diimplementasikan; jangan mengarang.
-- Konversi persetujuan susulan menjadi baris absensi → butuh keputusan aturan.
+- Penerbitan/reset PIN (AMB-01/02) → **SUDAH DIJAWAB** DEC-P22: PIN 6 digit
+  diketik admin pada `admin.account.create` & `admin.account.resetPin` (aktif).
+- Aturan susulan (AMB-11/12) → **SUDAH DIJAWAB** DEC-P23/P24: maksimal 3 hari
+  lampau, bukti alasan + foto JPEG, keputusan admin tidak menulis baris Absensi.
+  Endpoint `susulan.submit` sudah diimplementasikan.
+- Akses foto admin (AMB-20) → **SUDAH DIJAWAB** DEC-P25: endpoint blob ber-token.
+- Retensi (AMB-18) → **SUDAH DIJAWAB** DEC-P26: simpan permanen.
+- Impor CSV (AMB-14) & notifikasi (AMB-25) → dikesampingkan (DEC-P27).
+- Konversi persetujuan susulan menjadi baris absensi → masih butuh keputusan
+  aturan; jangan diimplementasikan sendiri.
 - Indikator kebijakan laporan (terlambat, tidak hadir, persentase kehadiran,
-  hari kerja efektif) → **BELUM DITETAPKAN**; jangan ditambahkan sendiri.
-- Jangan mulai PHASE 7 (atau fitur baru) tanpa instruksi; PHASE 6 sudah STOP.
+  hari kerja efektif) → **BELUM DITETAPKAN** (DEC-P28); jangan ditambahkan sendiri.
+- Jangan mulai PHASE 7 (atau fitur baru) tanpa instruksi.
 
 ## Catatan Runtime (2026-10-19)
 - `API_BASE_URL` diperbarui ke URL Web App terbaru pengguna (DEC-P21); versi aset
-  dinaikkan ke `0.6.2` agar service worker menarik `config.js` terbaru.
+  kini `0.6.3` (Pasca-PHASE 6: PIN admin, foto admin, form susulan).
 - **UI 0.6.0**: app shell mobile (app bar + bilah navigasi bawah
   Beranda/Absensi/Admin/Profil) via `assets/js/nav.js`; `index.html`,
   `assets/css/styles.css` dirombak. Hook JS (ID/kelas `att-*`, `admin-*`,

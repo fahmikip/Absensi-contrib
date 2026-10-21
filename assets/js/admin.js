@@ -5,8 +5,8 @@
  * - UI ini BUKAN pengaman: seluruh endpoint admin diverifikasi peran 'admin'
  *   di backend; peran diambil dari sesi server (bukan dari klien).
  * - Data dari server dirender dengan textContent (tanpa innerHTML) — anti XSS.
- * - Tidak ada URL/tautan foto yang ditampilkan (akses foto menunggu AMB-20);
- *   hanya metadata bukti (ada/tidak, jenis berkas, ukuran, path folder).
+ * - Foto ditampilkan inline via endpoint blob ber-token (DEC-P25); tanpa
+ *   tautan/URL publik & tanpa drive_file_id di data panel.
  * - Tidak ada penyimpanan token/PIN; sesi hanya di memori (D1).
  */
 (function () {
@@ -182,10 +182,83 @@
         row('Akun', 'Belum ada akun untuk pegawai ini');
       }
       box.appendChild(dl);
+      box.appendChild(buildPinForm(res.pegawai, res.akun));
       show(box);
     }).catch(function () {
       setStatus('Tidak dapat menghubungi server.', 'error');
     });
+  }
+
+  function buildPinForm(pegawai, akun) {
+    var form = document.createElement('form');
+    form.className = 'admin-form';
+    form.id = 'pegawai-pin-form';
+    var field = document.createElement('div');
+    field.className = 'form-field';
+    var label = document.createElement('label');
+    label.className = 'form-label';
+    label.setAttribute('for', 'pegawai-pin');
+    label.textContent = akun ? 'PIN baru (reset)' : 'PIN awal akun';
+    var input = document.createElement('input');
+    input.className = 'form-input';
+    input.id = 'pegawai-pin';
+    input.type = 'password';
+    input.inputMode = 'numeric';
+    input.autocomplete = 'new-password';
+    input.maxLength = 6;
+    input.pattern = '[0-9]{6}';
+    input.placeholder = '6 digit angka';
+    var hint = document.createElement('p');
+    hint.className = 'card__hint';
+    hint.textContent = 'PIN diisi admin dan disampaikan langsung ke pegawai. ' +
+      'PIN tidak disimpan di perangkat ini.';
+    field.appendChild(label);
+    field.appendChild(input);
+    field.appendChild(hint);
+    form.appendChild(field);
+    var actions = document.createElement('div');
+    actions.className = 'att-actions';
+    var btn = document.createElement('button');
+    btn.type = 'submit';
+    btn.className = 'btn btn--primary';
+    btn.textContent = akun ? 'Reset PIN' : 'Buat akun pegawai';
+    actions.appendChild(btn);
+    form.appendChild(actions);
+    var msg = document.createElement('p');
+    msg.className = 'form-message';
+    msg.id = 'pegawai-pin-message';
+    msg.setAttribute('role', 'status');
+    msg.hidden = true;
+    form.appendChild(msg);
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var pin = input.value;
+      if (!/^[0-9]{6}$/.test(pin)) {
+        setFormMessage('pegawai-pin-message', 'PIN harus 6 digit angka.', 'error');
+        return;
+      }
+      var action = akun ? 'admin.account.resetPin' : 'admin.account.create';
+      var data = akun ? { id_akun: akun.id_akun, pin: pin } : { id_pegawai: pegawai.id_pegawai, pin: pin };
+      btn.disabled = true;
+      api.call(action, data).then(function (res) {
+        btn.disabled = false;
+        input.value = '';
+        if (!res || !res.ok) {
+          setFormMessage('pegawai-pin-message',
+            (res && res.message) || 'Gagal menyimpan PIN.', 'error');
+          return;
+        }
+        setFormMessage('pegawai-pin-message',
+          akun ? 'PIN berhasil direset.' : 'Akun berhasil dibuat.', 'success');
+        showPegawaiDetail(pegawai.id_pegawai);
+        loadPegawai();
+      }).catch(function () {
+        btn.disabled = false;
+        input.value = '';
+        setFormMessage('pegawai-pin-message', 'Tidak dapat menghubungi server.', 'error');
+      });
+    });
+    return form;
   }
 
   function resetPegawaiForm() {
@@ -310,6 +383,61 @@
     });
   }
 
+  /**
+   * Menambahkan tombol tampil foto (AMB-20/DEC-P25): mengambil isi foto lewat
+   * endpoint ber-token, lalu menampilkannya sebagai data URI (tanpa tautan publik).
+   */
+  function appendPhotoViewer(box, action, params, msgId) {
+    var wrap = document.createElement('div');
+    wrap.className = 'att-actions';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn--small';
+    btn.textContent = 'Tampilkan foto';
+    var msg = document.createElement('p');
+    msg.className = 'form-message';
+    msg.id = msgId;
+    msg.setAttribute('role', 'status');
+    msg.hidden = true;
+    var holder = document.createElement('div');
+    holder.className = 'admin-photo';
+    var oldImg = null;
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      msg.hidden = true;
+      api.call(action, params).then(function (res) {
+        btn.disabled = false;
+        if (!res || !res.ok) {
+          setText(msg, (res && res.message) || 'Gagal memuat foto.');
+          msg.className = 'form-message form-message--error';
+          msg.hidden = false;
+          return;
+        }
+        if (!res.base64 || String(res.mime).indexOf('image/') !== 0) {
+          setText(msg, 'Data foto tidak valid.');
+          msg.className = 'form-message form-message--error';
+          msg.hidden = false;
+          return;
+        }
+        if (oldImg && oldImg.parentNode) oldImg.parentNode.removeChild(oldImg);
+        var img = document.createElement('img');
+        img.alt = 'Foto bukti (privat)';
+        img.src = 'data:' + res.mime + ';base64,' + res.base64;
+        holder.appendChild(img);
+        oldImg = img;
+      }).catch(function () {
+        btn.disabled = false;
+        setText(msg, 'Tidak dapat menghubungi server.');
+        msg.className = 'form-message form-message--error';
+        msg.hidden = false;
+      });
+    });
+    wrap.appendChild(btn);
+    box.appendChild(wrap);
+    box.appendChild(holder);
+    box.appendChild(msg);
+  }
+
   function showAbsensiDetail(idAbsensi) {
     api.call('admin.absensi.detail', { id_absensi: idAbsensi }).then(function (res) {
       if (!res || !res.ok) {
@@ -342,8 +470,13 @@
       box.appendChild(dl);
       var hint = document.createElement('p');
       hint.className = 'card__hint';
-      hint.textContent = 'Bukti foto tersimpan di Drive privat; tautan/URL tidak disediakan di panel ini.';
+      hint.textContent = 'Bukti foto tersimpan di Drive privat; ditampilkan lewat ' +
+        'endpoint ber-token (tanpa tautan publik).';
       box.appendChild(hint);
+      if (res.bukti && res.bukti.ada) {
+        appendPhotoViewer(box, 'admin.absensi.photo',
+          { id_absensi: res.absensi.id_absensi }, 'absensi-photo-message');
+      }
       show(box);
     }).catch(function () {
       setStatus('Tidak dapat menghubungi server.', 'error');
@@ -437,6 +570,10 @@
         ['Catatan keputusan', item.catatan_keputusan || '-']
       ]);
       box.appendChild(dl);
+      if (res.ada_bukti) {
+        appendPhotoViewer(box, 'admin.susulan.photo',
+          { id_pengajuan: item.id_pengajuan }, 'susulan-photo-message');
+      }
 
       if (item.status === 'menunggu') {
         var form = document.createElement('form');

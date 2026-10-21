@@ -52,12 +52,12 @@
 ## Keputusan Pending (menunggu jawaban pengguna)
 | ID | Terkait | Keputusan yang dibutuhkan | Status |
 |----|---------|---------------------------|--------|
-| DEC-P01 | AMB-21 | Visibilitas Web App & strategi CORS/token | MENUNGGU |
-| DEC-P02 | AMB-03/04/05 | Mekanisme PIN, hash, lockout, sesi | MENUNGGU |
+| DEC-P01 | AMB-21 | Visibilitas Web App & strategi CORS/token | DIJAWAB DEC-P16 (D8) |
+| DEC-P02 | AMB-03/04/05 | Mekanisme PIN, hash, lockout, sesi | DIJAWAB sebagian DEC-P09..P13; format PIN disahkan DEC-P22 |
 | DEC-P03 | AMB-07 | Nilai koordinat kantor | DISETUJUI 2026-10-19 (lihat DEC-P20) |
-| DEC-P04 | AMB-15/16/17 | Skema data & format waktu | MENUNGGU |
-| DEC-P05 | AMB-11/12 | Aturan susulan | MENUNGGU |
-| DEC-P06 | AMB-18 | Retensi data | MENUNGGU |
+| DEC-P04 | AMB-15/16/17 | Skema data & format waktu | DIJAWAB DEC-P15 (D6/D7) |
+| DEC-P05 | AMB-11/12 | Aturan susulan | DIGANTIKAN DEC-P23/P24 |
+| DEC-P06 | AMB-18 | Retensi data | DIGANTIKAN DEC-P26 |
 | DEC-P07 | AMB-19 | Laporan & ekspor | DISETUJUI 2026-10-19 |
 | DEC-P08 | AMB-23 | Nilai konfigurasi resource | DISETUJUI 2026-10-19 (nilai di Script Properties; tidak di repo — `backendConfigured:true`) |
 | DEC-P09 | AMB-05 | **D1** penyimpanan token sesi (memori/sessionStorage/localStorage/ubah arsitektur) | DISETUJUI 2026-10-15 |
@@ -226,3 +226,83 @@ Sumber: jawaban pengguna atas pertanyaan D0–D8 (lihat `docs/PHASE2_AUDIT.md`).
 - Yang TIDAK termasuk: nilai koordinat/ID resource tetap di Script Properties
   (kebijakan `docs/DEPLOYMENT.md` §A); belum ada uji browser/absensi nyata.
 - Sumber: instruksi pengguna 2026-10-19 (URL API baru), cek langsung endpoint.
+
+### DEC-P22 — Penerbitan & reset PIN oleh admin (AMB-01/02, sisa AMB-03)
+- Tanggal: 2026-10-21; Status: DISETUJUI (jawaban question tool 2026-10-21).
+- Keputusan:
+  1. **Admin mengetik PIN** saat `admin.account.create` (PIN wajib diisi) dan saat
+     `admin.account.resetPin`; admin menyampaikan PIN ke pegawai secara langsung
+     di luar aplikasi. Reset PIN kini **diaktifkan** (menggantikan status ditunda
+     D5/`NOT_AVAILABLE` — lihat DEC-P13 yang digantikan sebagian).
+  2. **Format PIN: tepat 6 digit angka** (`0-9`), divalidasi di backend untuk
+     pembuatan & reset. (Sisa AMB-03.)
+- Dampak: `handleAccountCreate_` mewajibkan `pin`; `handleResetPin_` diimplementasi
+  (reset juga membuka kunci akun yang terkunci); log audit `pin_reset`.
+  Tidak ada PIN default/otomatis di kode; tidak ada PIN di log/respons.
+- Sumber: jawaban question tool 2026-10-21 (opsi "Admin ketik PIN saat buat/reset",
+  "6 digit angka").
+
+### DEC-P23 — Batas tanggal pengajuan susulan (AMB-11)
+- Tanggal: 2026-10-21; Status: DISETUJUI (jawaban question tool 2026-10-21).
+- Keputusan: Pegawai hanya boleh mengajukan susulan untuk tanggal absensi
+  **maksimum 3 hari sebelum hari server (WIB)** dan **tidak untuk tanggal mendatang**.
+- Dampak: validasi backend `susulan.submit`; melebihi batas → `INVALID_INPUT`.
+- Sumber: jawaban question tool 2026-10-21 (opsi "3 hari"); menggantikan DEC-P05.
+
+### DEC-P24 — Bukti pengajuan susulan (AMB-12)
+- Tanggal: 2026-10-21; Status: DISETUJUI (jawaban question tool 2026-10-21).
+- Keputusan: Pengajuan susulan wajib memuat **alasan teks + foto** (JPEG,
+  validasi & batas ukuran sama dengan foto absensi reguler, DEC-P17); foto
+  disimpan ke Drive privat pada folder susulan.
+- Dampak: endpoint `susulan.submit` (wajib auth pegawai, alasan + foto);
+  keputusan admin tetap TIDAK menulis baris Absensi (PHASE 4 — konversi ke
+  absensi tetap menunggu keputusan aturan tersendiri).
+- Sumber: jawaban question tool 2026-10-21 (opsi "Alasan + foto").
+
+### DEC-P25 — Akses foto absensi oleh admin (AMB-20)
+- Tanggal: 2026-10-21; Status: DISETUJUI (jawaban question tool 2026-10-21).
+- Keputusan: Admin melihat foto lewat **endpoint blob ber-token** khusus
+  (`admin.absensi.photo`, `admin.susulan.photo`): POST + token sesi admin →
+  mengembalikan isi foto (base64) + MIME; ditampilkan inline di panel admin.
+  Tanpa tautan publik, tanpa `drive_file_id` di respons.
+- Dampak: foto tetap privat; respons daftar/tetap tidak memuat referensi Drive.
+- Sumber: jawaban question tool 2026-10-21 (opsi "Endpoint blob ber-token").
+
+### DEC-P26 — Retensi data (AMB-18)
+- Tanggal: 2026-10-21; Status: DISETUJUI (jawaban question tool 2026-10-21).
+- Keputusan: **Simpan permanen** — tanpa penghapusan otomatis foto maupun data
+  absensi. Penghapusan (bila kelak diperlukan) adalah tindakan manual/administratif.
+- Dampak: tidak ada fitur retensi yang dibangun; dokumentasi kebijakan diperbarui.
+- Sumber: jawaban question tool 2026-10-21 (opsi "Simpan permanen");
+  menggantikan DEC-P06.
+
+### DEC-P27 — Impor data & notifikasi (AMB-14, AMB-25)
+- Tanggal: 2026-10-21; Status: DISETUJUI (jawaban question tool 2026-10-21).
+- Keputusan: Impor CSV pegawai (AMB-14) dan notifikasi (AMB-25) **perlu, tetapi
+  rilis lanjut** — TIDAK dikerjakan pada rilis ini; tetap dicatat sebagai
+  kebutuhan fase berikutnya.
+- Sumber: jawaban question tool 2026-10-21.
+
+### DEC-P28 — Indikator kebijakan laporan (sisa AMB-19, merujuk DEC-P07)
+- Tanggal: 2026-10-21; Status: DISETUJUI (konfirmasi keputusan lama).
+- Keputusan: Laporan **tetap fakta terhitung saja** — tanpa indikator terlambat,
+  tidak hadir, atau persentase kehadiran. Konfirmasi atas DEC-P07 butir 3;
+  tidak ada perubahan implementasi.
+- Sumber: jawaban question tool 2026-10-21 (opsi "Tidak, fakta saja").
+
+### DEC-P29 — Struktur penyimpanan foto absensi (hierarkis)
+- Tanggal: 2026-10-21; Status: DISETUJUI (instruksi pengguna 2026-10-21).
+- Keputusan: Struktur folder foto absensi reguler diubah menjadi
+  `ABSENSI_KPU/{TAHUN}/{MM_NamaBulan}/{DD}/{NamaPegawai_IDPegawai}/` dengan nama
+  file tetap `Absen_Masuk.jpg` / `Absen_Pulang.jpg` (nama bulan Indonesia).
+  Menggantikan struktur `YYYY/MM/Foto_Masuk|Foto_Pulang/` (DEC-007).
+- Batasan: folder utama `DRIVE_FOLDER_ID` tetap wadah yang dikonfigurasi
+  operator (tidak di repo); nama folder disanitasi; ID pegawai internal
+  dipertahankan sebagai kunci agar nama sama tidak tertukar.
+- Tidak berubah: privasi Drive (privat, tanpa "anyone with link"), validasi
+  foto/sesi/waktu/GPS, tanpa watermark, foto susulan tetap terpisah
+  (`.../{MM_NamaBulan}/Foto_Susulan/`, DEC-P24), retensi permanen (DEC-P26).
+- Pencegahan duplikat: nama file tetap + prasyarat satu masuk/satu pulang per
+  pegawai per tanggal + idempotensi `id_absensi` + `LockService`.
+- Migrasi: foto lama berstruktur lama TIDAK dipindah/dihapus (DEC-007/DEC-P26);
+  struktur baru hanya berlaku untuk penyimpanan baru.

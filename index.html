@@ -204,6 +204,55 @@
         </div>
 
         <p id="att-status" class="att-status" role="status" aria-live="polite" hidden></p>
+
+        <section class="card susulan-card" aria-labelledby="susulan-title">
+          <h3 class="att-step__subtitle" id="susulan-title">Ajukan absensi susulan</h3>
+          <p class="card__hint">
+            Untuk absensi yang terlewat: maksimal 3 hari sebelum hari berjalan,
+            lengkapi alasan dan foto bukti (JPEG). Pengajuan menunggu
+            persetujuan admin — belum tercatat sebagai absensi.
+          </p>
+          <form id="susulan-form" class="admin-form" novalidate>
+            <div class="form-field">
+              <label for="susulan-tanggal">Tanggal absensi</label>
+              <input class="form-input" id="susulan-tanggal" name="tanggal"
+                type="date" required />
+            </div>
+            <div class="form-field">
+              <label for="susulan-jenis">Jenis</label>
+              <select class="form-input" id="susulan-jenis" name="jenis">
+                <option value="masuk">Masuk</option>
+                <option value="pulang">Pulang</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="susulan-mode">Mode kerja</label>
+              <select class="form-input" id="susulan-mode" name="mode_kerja">
+                <option value="WFO">WFO (di kantor)</option>
+                <option value="WFH_WFA">WFH/WFA</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="susulan-waktu">Waktu yang diklaim</label>
+              <input class="form-input" id="susulan-waktu" name="waktu"
+                type="time" required />
+            </div>
+            <div class="form-field">
+              <label for="susulan-alasan">Alasan</label>
+              <textarea class="form-input" id="susulan-alasan" name="alasan"
+                rows="3" maxlength="500" required></textarea>
+            </div>
+            <div class="form-field">
+              <label for="susulan-foto">Foto bukti (JPEG)</label>
+              <input class="form-input" id="susulan-foto" name="foto"
+                type="file" accept="image/jpeg,image/*" capture="environment" required />
+            </div>
+            <div class="att-actions">
+              <button class="btn btn--primary" id="susulan-submit" type="submit">Kirim pengajuan</button>
+            </div>
+            <p class="form-message" id="susulan-message" role="status" aria-live="polite" hidden></p>
+          </form>
+        </section>
       </section>
 
       <section id="admin-view" class="view panel" aria-labelledby="admin-title" hidden>
@@ -514,6 +563,7 @@
   <script src="./assets/js/app.js"></script>
   <script src="./assets/js/camera.js"></script>
   <script src="./assets/js/attendance.js"></script>
+  <script src="./assets/js/susulan.js"></script>
   <script src="./assets/js/auth.js"></script>
   <script src="./assets/js/admin.js"></script>
   <script src="./assets/js/report.js"></script>

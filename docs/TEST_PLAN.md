@@ -3,6 +3,9 @@
 > Status: **PHASE 1 & pengujian otomatis PHASE 2 sebagian dieksekusi.** Rencana +
 > hasil apa adanya (lulus/gagal/tidak dijalankan). Pengujian otomatis berjalan di
 > Node dengan stub; integrasi runtime Apps Script & browser BELUM dijalankan.
+>
+> Catatan 2026-10-21: suite otomatis kini `check-foundation` 71, `auth` 56,
+> `attendance` 157, `admin` 171, `report` 162, `susulan` 67 — semua LULUS.
 
 ## Strategi
 - Unit test logika murni (perhitungan jarak, evaluasi jam, validasi input) bila memungkinkan di JS.
@@ -33,9 +36,10 @@ Dijalankan dengan `node tests/check-foundation.mjs`.
 | FD-16 | Pengujian autentikasi otomatis (`tests/auth.test.mjs`, 42 cek) | LULUS |
 | FD-17 | Vektor PBKDF2-HMAC-SHA256 RFC 7914 §11 (c=1, c=80000) | LULUS |
 | FD-18 | Benchmark iterasi PBKDF2 di runtime Apps Script nyata | BELUM DIJALANKAN |
-| FD-19 | Pengujian mesin absensi (`tests/attendance.test.mjs`, 112 cek) | LULUS |
-| FD-20 | Pengujian panel admin (`tests/admin.test.mjs`, 156 cek) | LULUS |
+| FD-19 | Pengujian mesin absensi (`tests/attendance.test.mjs`, 157 cek) | LULUS |
+| FD-20 | Pengujian panel admin (`tests/admin.test.mjs`, 171 cek) | LULUS |
 | FD-21 | Pengujian laporan (`tests/report.test.mjs`, 162 cek) | LULUS |
+| FD-22 | Pengujian pengajuan susulan (`tests/susulan.test.mjs`, 67 cek) | LULUS |
 
 ## 1. Aturan Waktu (zona `Asia/Jakarta`)
 | ID | Kasus | Ekspektasi |
@@ -82,7 +86,7 @@ diuji otomatis di Node dengan stub (`tests/auth.test.mjs`) — BUKAN runtime App
 | AU-08 | Pemalsuan `role` di body | Diabaikan; peran dari server | LULUS (otomatis) |
 | AU-09 | Manipulasi `id_pegawai` | Ditolak | LULUS (otomatis, NOT_FOUND) |
 | AU-10 | Buat akun duplikat | Ditolak | LULUS (otomatis, DUPLICATE) |
-| AU-11 | Reset PIN tanpa otorisasi | Ditolak | LULUS (otomatis, NOT_AVAILABLE) |
+| AU-11 | Reset PIN tanpa otorisasi | Ditolak | LULUS (otomatis, `admin.account.resetPin` kini aktif — DEC-P22) |
 | AU-12 | PIN/token mentah di log | Tidak ada | LULUS (otomatis) |
 | AU-13 | Permintaan bersamaan (lockout/status) | Konsisten (`LockService`) | BELUM DIJALANKAN (butuh runtime) |
 | AU-14 | Kegagalan penyimpanan | Respons gagal, bukan sukses | BELUM DIJALANKAN |
@@ -105,7 +109,7 @@ diuji otomatis di Node dengan stub (`tests/auth.test.mjs`) — BUKAN runtime App
 | PW-03 | Tautan file Drive diakses tanpa izin | Gagal (privat) |
 
 ## 7. Panel Admin (PHASE 4) — otomatis
-Dijalankan dengan `node tests/admin.test.mjs` (156 cek) — Node + stub,
+Dijalankan dengan `node tests/admin.test.mjs` (171 cek) — Node + stub,
 BUKAN runtime Apps Script. Data uji sintetis berlabel `TEST`.
 | ID | Kasus | Hasil |
 |----|-------|-------|
@@ -128,6 +132,9 @@ BUKAN runtime Apps Script. Data uji sintetis berlabel `TEST`.
 | AD-17 | Router/doPost JSON endpoint admin; `health.phase='admin'`; header `PengajuanSusulan` | LULUS (otomatis) |
 | AD-18 | UI panel admin di browser (form, tab, visibilitas peran) | BELUM DIJALANKAN |
 | AD-19 | Otorisasi admin terhadap Web App nyata (runtime Apps Script) | BELUM DIJALANKAN |
+| AD-20 | Buat akun & reset PIN via panel (PIN 6 digit, unlock, log tanpa PIN) | LULUS (otomatis — DEC-P22) |
+| AD-21 | Foto absensi/susulan: endpoint blob ber-token; byte utuh tanpa `drive_file_id`/URL | LULUS (otomatis — DEC-P25) |
+| AD-22 | Referensi foto mengikuti catatan absensi; struktur folder baru (DEC-P29) | LULUS (otomatis) |
 
 ## 8. Laporan & Ekspor (PHASE 5) — otomatis
 Dijalankan dengan `node tests/report.test.mjs` (162 cek) — Node + stub,
@@ -169,7 +176,47 @@ runtime non-destruktif terhadap Web App ter-deploy & GitHub Pages.
 | QA-09 | Integrasi runtime penuh (login/absensi/laporan) | BELUM DIJALANKAN (butuh `SPREADSHEET_ID`, DEC-P08) |
 | QA-10 | Benchmark PBKDF2 di runtime Apps Script (D2) | BELUM DIJALANKAN (butuh Sheets) |
 
+## 8c. Pengajuan Susulan (REQUIREMENTS §8) — otomatis
+Dijalankan dengan `node tests/susulan.test.mjs` (67 cek) — Node + stub,
+BUKAN runtime Apps Script. Data uji sintetis berlabel `TEST`.
+| ID | Kasus | Hasil |
+|----|-------|-------|
+| SU-01 | Tanggal: format YYYY-MM-DD, kalender valid, kabisat; tolak mendatang & >3 hari | LULUS (otomatis — DEC-P23) |
+| SU-02 | Waktu diklaim: normalkan HH:MM→HH:MM:SS, tolak jam/menit tak valid, terima lintas-malam secara format | LULUS (otomatis) |
+| SU-03 | Alasan wajib; batas 500 karakter (500 diterima, 501 ditolak) | LULUS (otomatis — DEC-P24) |
+| SU-04 | Foto wajib; magic JPEG; PNG ditolak (`PHOTO_INVALID`) | LULUS (otomatis) |
+| SU-05 | `susulan.submit` valid: baris `PengajuanSusulan`, foto `Foto_Susulan`, log tanpa PIN/token | LULUS (otomatis) |
+| SU-06 | Identitas dari SESI (payload `id_pegawai` diabaikan) | LULUS (otomatis) |
+| SU-07 | Duplikat: menunggu/diterima menghalangi; ditolak boleh ulang; jenis/pegawai lain tak memblokir | LULUS (otomatis) |
+| SU-08 | Otorisasi: tanpa/salah token → `UNAUTHORIZED`; GET → `METHOD_NOT_ALLOWED` | LULUS (otomatis) |
+| SU-09 | Router/`doPost` (`susulan.submit`), penolakan input tak menulis baris/foto | LULUS (otomatis) |
+| SU-10 | UI form susulan di browser (tanggal batas, konversi foto, kirim, pesan) | BELUM DIJALANKAN |
+| SU-11 | Otorisasi & penyimpanan susulan pada Web App nyata (runtime) | BELUM DIJALANKAN |
+
+## 8d. Struktur Folder Foto Absensi (DEC-P29) — otomatis
+Dijalankan di `tests/attendance.test.mjs` (157 cek) — Node + stub Drive
+in-memory. Struktur diverifikasi lewat `BuktiAbsensi.path`, nama file, dan
+pohon folder stub. Data uji sintetis.
+| ID | Kasus | Hasil |
+|----|-------|-------|
+| DF-01 | Nama folder bulan `MM_NamaBulan` (Indonesia) | LULUS (otomatis) |
+| DF-02 | Nama folder pegawai `Nama_IDPegawai` (sanitasi karakter) | LULUS (otomatis) |
+| DF-03 | Check-in → `.../DD/Nama_ID/Absen_Masuk.jpg` di path benar | LULUS (otomatis) |
+| DF-04 | Check-out → `Absen_Pulang.jpg` folder pegawai yang sama | LULUS (otomatis) |
+| DF-05 | Tanggal berbeda → folder tanggal berbeda | LULUS (otomatis) |
+| DF-06 | Nama pegawai sama tidak tertukar (ID internal di folder) | LULUS (otomatis) |
+| DF-07 | Folder tahun/bulan/tanggal/pegawai dipakai ulang (tidak dibuat ulang) | LULUS (otomatis) |
+| DF-08 | Klik ganda & retry idempoten → tanpa file/bukti kedua | LULUS (otomatis) |
+| DF-09 | Kegagalan Drive → tanpa file/baris, `ATTENDANCE_NOT_STORED`, log orphan | LULUS (otomatis) |
+| DF-10 | Kegagalan Sheets → `ATTENDANCE_STORAGE_PARTIAL`, file orphan dicatat | LULUS (otomatis) |
+| DF-11 | Foto privat (`setSharing`), byte utuh lewat endpoint ber-token | LULUS (otomatis) |
+| DF-12 | Aturan lama (jam/GPS/sesi) tetap berlaku | LULUS (otomatis) |
+| DF-13 | Struktur folder pada Drive nyata (runtime Apps Script) | BELUM DIJALANKAN |
+
 ## 9. Yang BELUM Diuji
+- Kasus susulan SU-10/SU-11 & folder DF-13 (browser & runtime) — baru otomatis Node.
+- Catatan: folder lama berstruktur `YYYY/MM/Foto_Masuk|Foto_Pulang/` tidak
+  dipindah/dihapus (DEC-P29/DEC-P26); tidak ada uji migrasi karena tidak ada migrasi.
 - Kasus laporan RP-15/RP-16/RP-17 (browser & runtime) — baru otomatis Node.
 - Kasus panel admin AD-18/AD-19 (browser & runtime) — baru otomatis Node.
 - Kasus fungsional absensi (WT/GP/PH/TX) dijalankan otomatis via

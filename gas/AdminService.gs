@@ -380,6 +380,34 @@ function handleAdminAbsensiDetail_(payload, method) {
   };
 }
 
+/**
+ * Mengambil isi foto absensi sebagai blob ber-token (DEC-P25 / AMB-20).
+ * Hanya admin; File ID tidak dikirim ke klien.
+ */
+function handleAdminAbsensiPhoto_(payload, method) {
+  adminRequire_(payload, method);
+  var idAbsensi = payload.id_absensi ? String(payload.id_absensi) : '';
+  if (!idAbsensi) throw AppError_('INVALID_INPUT', 'Data tidak lengkap.', true);
+
+  var row = findAbsensiById_(idAbsensi);
+  if (!row) throw AppError_('NOT_FOUND', 'Absensi tidak ditemukan.', true);
+
+  var fileId = '';
+  if (row.id_bukti) {
+    var buktiRows = readObjects_('BuktiAbsensi');
+    for (var i = 0; i < buktiRows.length; i++) {
+      if (String(buktiRows[i].id_bukti) === String(row.id_bukti)) {
+        fileId = String(buktiRows[i].drive_file_id || '');
+        break;
+      }
+    }
+  }
+  if (!fileId) throw AppError_('NOT_FOUND', 'Foto tidak tersedia.', true);
+
+  var photo = readAttendancePhoto_(fileId);
+  return { ok: true, mime: photo.mime, ukuran: photo.ukuran, base64: photo.base64 };
+}
+
 /* ---------------- Absensi susulan ---------------- */
 
 function susulanListFields_(row, namaMap) {
@@ -438,6 +466,23 @@ function handleAdminSusulanDetail_(payload, method) {
       : null,
     ada_bukti: Boolean(row.bukti_file_id)
   };
+}
+
+/**
+ * Mengambil isi foto bukti susulan sebagai blob ber-token (DEC-P25 / AMB-20).
+ * Hanya admin; File ID tidak dikirim ke klien.
+ */
+function handleAdminSusulanPhoto_(payload, method) {
+  adminRequire_(payload, method);
+  var idPengajuan = payload.id_pengajuan ? String(payload.id_pengajuan) : '';
+  if (!idPengajuan) throw AppError_('INVALID_INPUT', 'Data tidak lengkap.', true);
+
+  var row = findPengajuanById_(idPengajuan);
+  if (!row) throw AppError_('NOT_FOUND', 'Pengajuan tidak ditemukan.', true);
+  if (!row.bukti_file_id) throw AppError_('NOT_FOUND', 'Foto tidak tersedia.', true);
+
+  var photo = readAttendancePhoto_(row.bukti_file_id);
+  return { ok: true, mime: photo.mime, ukuran: photo.ukuran, base64: photo.base64 };
 }
 
 function handleAdminSusulanDecide_(payload, method) {

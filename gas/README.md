@@ -18,7 +18,7 @@ CSV** (PHASE 5: filter periode, rekapitulasi, ekspor CSV — admin saja).
 | `ReportService.gs` | Endpoint laporan, rekap, dan ekspor CSV (PHASE 5; semua wajib peran `admin`). |
 | `TimeRule.gs` | Aturan jendela waktu absensi (WIB; DEC-003/DEC-P18). |
 | `Geo.gs` | Haversine + evaluasi GPS masuk WFO (radius ≤50 m). |
-| `Drive.gs` | Simpan foto JPEG ke folder Drive privat ABSENSI_KPU/… |
+| `Drive.gs` | Simpan foto JPEG ke folder Drive privat `ABSENSI_KPU/{YYYY}/{MM_NamaBulan}/{DD}/{Nama_ID}/Absen_Masuk|Absen_Pulang.jpg` (DEC-P29). |
 | `Attendance.gs` | Mesin absensi reguler (validasi, lock, kompensasi parsial). |
 | `Bootstrap.gs` | Fungsi manual `initializeSheets()` & `seedAdmin()`. |
 | `appsscript.json` | Manifest (zona waktu `Asia/Jakarta`, runtime V8, `webapp` D8). |
@@ -38,6 +38,7 @@ Token sesi HANYA dikirim di body (bukan query string).
 | `admin.account.setActive` | POST | Ya (admin) | Aktif/nonaktif akun; nonaktif mencabut semua sesi. |
 | `admin.account.resetPin` | POST | — | **NOT_AVAILABLE** (menunggu keputusan D5). |
 | `attendance.submit` | POST | Ya | Absensi reguler (foto JPEG + GPS masuk WFO). |
+| `susulan.submit` | POST | Ya | Pengajuan susulan pegawai (tanggal ≤3 hari lampau, alasan + foto JPEG). |
 | `admin.pegawai.list` | POST | Ya (admin) | Daftar pegawai (filter q/status/limit). |
 | `admin.pegawai.detail` | POST | Ya (admin) | Detail pegawai + info akun (tanpa hash PIN). |
 | `admin.pegawai.create` | POST | Ya (admin) | Tambah pegawai (kolom DATA_DICTIONARY §1). |
@@ -45,8 +46,10 @@ Token sesi HANYA dikirim di body (bukan query string).
 | `admin.pegawai.setActive` | POST | Ya (admin) | Aktif/nonaktif pegawai; nonaktif mencabut sesi; riwayat absensi tetap. |
 | `admin.absensi.list` | POST | Ya (admin) | Daftar absensi (filter tanggal/jenis/pegawai); tanpa referensi foto. |
 | `admin.absensi.detail` | POST | Ya (admin) | Detail absensi + metadata bukti (ada/mime/ukuran/path). |
+| `admin.absensi.photo` | POST | Ya (admin) | Isi foto absensi (base64+mime) via referensi `id_bukti` (DEC-P25). |
 | `admin.susulan.list` | POST | Ya (admin) | Daftar pengajuan susulan (filter status). |
 | `admin.susulan.detail` | POST | Ya (admin) | Detail pengajuan + alasan + status keputusan. |
+| `admin.susulan.photo` | POST | Ya (admin) | Isi foto bukti susulan (base64+mime) via `id_pengajuan` (DEC-P25). |
 | `admin.susulan.decide` | POST | Ya (admin) | `keputusan:'terima'|'tolak'` + `catatan_keputusan`; hanya dari `menunggu`. |
 | `admin.log.list` | POST | Ya (admin) | Log audit (filter aksi/limit). |
 | `report.absensi.list` | POST | Ya (admin) | Daftar absensi untuk laporan (rentang wajib, filter; join nama). |
@@ -65,9 +68,12 @@ Catatan PHASE 5:
 
 Catatan PHASE 4:
 - Respons **tidak pernah** memuat `pin_hash`, `pin_salt`, `drive_file_id`, atau
-  URL foto (akses foto menunggu AMB-20).
+  URL foto; akses foto lewat endpoint blob ber-token (DEC-P25).
 - Keputusan susulan hanya mengubah status pengajuan + log; **tidak** otomatis
   menulis baris `Absensi` (keputusan aturan belum ada).
+- Struktur folder foto absensi: `ABSENSI_KPU/{YYYY}/{MM_NamaBulan}/{DD}/{Nama_ID}/`
+  dengan file `Absen_Masuk.jpg`/`Absen_Pulang.jpg` (DEC-P29). Foto susulan
+  terpisah di `.../{MM_NamaBulan}/Foto_Susulan/`.
 
 Contoh respons login sukses:
 ```json
@@ -113,9 +119,6 @@ Isi via **Project Settings → Script Properties** (jangan simpan di kode):
 - Iterasi PBKDF2 default belum di-benchmark di runtime nyata.
 
 ## Belum Diimplementasikan
-- Penerbitan/reset PIN (D5).
-- Pengajuan susulan oleh pegawai (form/alur belum ada; hanya keputusan admin).
-- Akses/penampilan foto oleh admin (AMB-20) — tidak ada endpoint foto.
 - Impor CSV (AMB-14), retensi (AMB-18), notifikasi (AMB-25).
 - Indikator kebijakan laporan (terlambat, tidak hadir, persentase kehadiran) —
   aturannya belum ditetapkan (DEC-P07).

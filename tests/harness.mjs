@@ -21,6 +21,7 @@ const GAS_FILES = [
   'gas/Geo.gs',
   'gas/Drive.gs',
   'gas/Attendance.gs',
+  'gas/Susulan.gs',
   'gas/AuthService.gs',
   'gas/AdminService.gs',
   'gas/ReportService.gs',
@@ -81,31 +82,44 @@ function makeSpreadsheet() {
 }
 
 /** Stub folder Drive sederhana (hierarki in-memory untuk pengujian). */
-function makeDriveFolder(name, registry) {
+function makeDriveFolder(name, registry, parentPath) {
   const folders = new Map();
   const files = [];
+  const path = parentPath ? parentPath + '/' + name : name;
   const folder = {
     _name: name,
+    _path: path,
+    _parentPath: parentPath || '',
     getFoldersByName(n) {
       const found = folders.has(n) ? [folders.get(n)] : [];
       let i = 0;
       return { hasNext: () => i < found.length, next: () => found[i++] };
     },
     createFolder(n) {
-      const f = makeDriveFolder(n, registry);
+      const f = makeDriveFolder(n, registry, path);
       folders.set(n, f);
+      folder.getFoldersByName(n);
       return f;
     },
     createFile(blob) {
+      const fileId = 'DRV-' + registry.files.length + '-' + Math.random().toString(36).slice(2, 8);
       const file = {
         _name: blob.getName ? blob.getName() : 'file',
         _bytes: blob.getBytes ? blob.getBytes() : [],
         _trashed: false,
         _shared: false,
-        getId: () => 'DRV-' + registry.files.length + '-' + Math.random().toString(36).slice(2, 8),
+        _path: path + '/' + (blob.getName ? blob.getName() : 'file'),
+        getId: () => fileId,
         getName() { return this._name; },
         getBytes() { return this._bytes.slice(); },
         getContentType: () => blob.getContentType ? blob.getContentType() : '',
+        getBlob() {
+          const self = this;
+          return {
+            getBytes: () => self._bytes.slice(),
+            getContentType: () => (blob.getContentType ? blob.getContentType() : '')
+          };
+        },
         setSharing() { this._shared = true; return this; },
         setTrashed(v) { this._trashed = Boolean(v); return this; }
       };
@@ -116,6 +130,7 @@ function makeDriveFolder(name, registry) {
     _files: files,
     _folders: folders
   };
+  registry.folders.push(folder);
   return folder;
 }
 
@@ -127,7 +142,7 @@ export function createEnv(options = {}) {
   const spreadsheet = makeSpreadsheet();
   const props = new Map(Object.entries(options.props || {}));
   const logs = [];
-  const driveRegistry = { files: [] };
+  const driveRegistry = { files: [], folders: [] };
   const driveRoots = new Map();
 
   function formatDateJkt(date, timeZone, pattern) {
@@ -184,7 +199,7 @@ export function createEnv(options = {}) {
       Permission: { NONE: 'NONE' },
       getFolderById(id) {
         if (!driveRoots.has(id)) {
-          driveRoots.set(id, makeDriveFolder('root-' + id, driveRegistry));
+          driveRoots.set(id, makeDriveFolder('root-' + id, driveRegistry, ''));
         }
         return driveRoots.get(id);
       },

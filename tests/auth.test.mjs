@@ -320,7 +320,7 @@ function envWithAdmin() {
   return env;
 }
 
-check('admin dapat membuat akun baru', () => {
+check('admin dapat membuat akun baru + PIN 6 digit', () => {
   const env = envWithAdmin();
   const pegawai = {
     id_pegawai: 'PEG-NEW', nama: 'Baru', nip_nipk: '5555666677778888',
@@ -331,11 +331,33 @@ check('admin dapat membuat akun baru', () => {
   env.sandbox.appendObject_('Pegawai', pegawai);
   const login = env.sandbox.handleLogin_({ nip: '9000111122223333', pin: '112233' }, 'POST');
   const res = env.sandbox.handleAccountCreate_(
-    { token: login.token, id_pegawai: 'PEG-NEW' }, 'POST');
+    { token: login.token, id_pegawai: 'PEG-NEW', pin: '135790' }, 'POST');
   if (!res.ok || !res.id_akun) throw new Error('gagal membuat akun');
-  if (env.sandbox.findAkunByPegawaiId_('PEG-NEW').pin_hash !== '') {
-    throw new Error('PIN terbit tanpa keputusan D5');
-  }
+  const akun = env.sandbox.findAkunByPegawaiId_('PEG-NEW');
+  if (!akun.pin_hash || !akun.pin_salt) throw new Error('PIN belum disimpan (DEC-P22)');
+  if (akun.pin_hash.indexOf('135790') !== -1) throw new Error('PIN tersimpan mentah');
+  const loginBaru = env.sandbox.handleLogin_(
+    { nip: '5555666677778888', pin: '135790' }, 'POST');
+  if (!loginBaru.ok) throw new Error('login dengan PIN baru gagal');
+  return true;
+});
+
+check('buat akun menolak PIN bukan 6 digit angka', () => {
+  const env = envWithAdmin();
+  const pegawai = {
+    id_pegawai: 'PEG-PIN', nama: 'Uji PIN', nip_nipk: '5555666677779999',
+    jabatan: 'BELUM DITETAPKAN', unit_kerja: 'BELUM DITETAPKAN', status_aktif: true,
+    dibuat_pada: env.sandbox.nowIso_(), dibuat_oleh: 'test',
+    diubah_pada: env.sandbox.nowIso_(), diubah_oleh: 'test'
+  };
+  env.sandbox.appendObject_('Pegawai', pegawai);
+  const login = env.sandbox.handleLogin_({ nip: '9000111122223333', pin: '112233' }, 'POST');
+  ['12345', '1234567', 'abcdef', '12 456', ''].forEach((pin) => {
+    throwsCode('PIN "' + pin + '" ditolak',
+      () => env.sandbox.handleAccountCreate_(
+        { token: login.token, id_pegawai: 'PEG-PIN', pin }, 'POST'),
+      'INVALID_INPUT');
+  });
   return true;
 });
 
@@ -344,7 +366,7 @@ check('buat akun untuk pegawai tak ada → NOT_FOUND', () => {
   const login = env.sandbox.handleLogin_({ nip: '9000111122223333', pin: '112233' }, 'POST');
   throwsCode('NOT_FOUND',
     () => env.sandbox.handleAccountCreate_(
-      { token: login.token, id_pegawai: 'TIDAK-ADA' }, 'POST'),
+      { token: login.token, id_pegawai: 'TIDAK-ADA', pin: '654321' }, 'POST'),
     'NOT_FOUND');
   return true;
 });
@@ -354,7 +376,7 @@ check('buat akun duplikat ditolak', () => {
   const login = env.sandbox.handleLogin_({ nip: '9000111122223333', pin: '112233' }, 'POST');
   throwsCode('DUPLICATE',
     () => env.sandbox.handleAccountCreate_(
-      { token: login.token, id_pegawai: 'PEG-USER' }, 'POST'),
+      { token: login.token, id_pegawai: 'PEG-USER', pin: '654321' }, 'POST'),
     'DUPLICATE');
   return true;
 });
@@ -363,7 +385,8 @@ check('non-admin ditolak saat membuat akun', () => {
   const { env } = envWithAccount();
   const login = env.sandbox.handleLogin_({ nip: '1111222233334444', pin: '246810' }, 'POST');
   throwsCode('FORBIDDEN',
-    () => env.sandbox.handleAccountCreate_({ token: login.token, id_pegawai: 'PEG-X' }, 'POST'),
+    () => env.sandbox.handleAccountCreate_(
+      { token: login.token, id_pegawai: 'PEG-X', pin: '654321' }, 'POST'),
     'FORBIDDEN');
   return true;
 });
@@ -380,12 +403,79 @@ check('setActive(false) mencabut sesi akun', () => {
   return true;
 });
 
-check('resetPin ditolak (NOT_AVAILABLE, keputusan D5)', () => {
+check('resetPin oleh admin: PIN baru berlaku, PIN lama ditolak', () => {
   const env = envWithAdmin();
   const admin = env.sandbox.handleLogin_({ nip: '9000111122223333', pin: '112233' }, 'POST');
-  throwsCode('NOT_AVAILABLE',
+  const res = env.sandbox.handleResetPin_(
+    { token: admin.token, id_akun: 'AKN-USER', pin: '445566' }, 'POST');
+  if (!res.ok) throw new Error('reset PIN gagal');
+  const akun = env.sandbox.findAkunById_('AKN-USER');
+  if (!akun.pin_hash || akun.pin_hash.indexOf('445566') !== -1) {
+    throw new Error('hash PIN tidak diperbarui / tersimpan mentah');
+  }
+  if (env.sandbox.handleLogin_(
+    { nip: '1111222233334444', pin: '246810' }, 'POST').ok) {
+    throw new Error('PIN lama masih diterima');
+  }
+  if (!env.sandbox.handleLogin_(
+    { nip: '1111222233334444', pin: '445566' }, 'POST').ok) {
+    throw new Error('PIN baru tidak diterima');
+  }
+  return true;
+});
+
+check('resetPin membuka kunci akun setelah lockout', () => {
+  const env = envWithAdmin();
+  const admin = env.sandbox.handleLogin_({ nip: '9000111122223333', pin: '112233' }, 'POST');
+  for (let i = 0; i < 5; i++) {
+    env.sandbox.handleLogin_({ nip: '1111222233334444', pin: '000000' }, 'POST');
+  }
+  const locked = env.sandbox.handleLogin_({ nip: '1111222233334444', pin: '246810' }, 'POST');
+  if (locked.ok) throw new Error('akun tidak terkunci');
+  env.sandbox.handleResetPin_(
+    { token: admin.token, id_akun: 'AKN-USER', pin: '998877' }, 'POST');
+  const akun = env.sandbox.findAkunById_('AKN-USER');
+  if (String(akun.gagal_login) !== '0' || akun.terkunci_sampai) {
+    throw new Error('lockout tidak direset');
+  }
+  if (!env.sandbox.handleLogin_(
+    { nip: '1111222233334444', pin: '998877' }, 'POST').ok) {
+    throw new Error('login setelah reset tetap ditolak');
+  }
+  return true;
+});
+
+check('resetPin: otorisasi, format PIN & akun tak ada', () => {
+  const env = envWithAdmin();
+  const admin = env.sandbox.handleLogin_({ nip: '9000111122223333', pin: '112233' }, 'POST');
+  const user = env.sandbox.handleLogin_({ nip: '1111222233334444', pin: '246810' }, 'POST');
+  throwsCode('non-admin ditolak',
+    () => env.sandbox.handleResetPin_({ token: user.token, id_akun: 'AKN-USER', pin: '445566' }, 'POST'),
+    'FORBIDDEN');
+  throwsCode('tanpa token ditolak',
+    () => env.sandbox.handleResetPin_({ id_akun: 'AKN-USER', pin: '445566' }, 'POST'),
+    'UNAUTHORIZED');
+  throwsCode('PIN bukan 6 digit ditolak',
+    () => env.sandbox.handleResetPin_({ token: admin.token, id_akun: 'AKN-USER', pin: '12345' }, 'POST'),
+    'INVALID_INPUT');
+  throwsCode('tanpa PIN ditolak',
     () => env.sandbox.handleResetPin_({ token: admin.token, id_akun: 'AKN-USER' }, 'POST'),
-    'NOT_AVAILABLE');
+    'INVALID_INPUT');
+  throwsCode('akun tak ada → NOT_FOUND',
+    () => env.sandbox.handleResetPin_({ token: admin.token, id_akun: 'AKN-X', pin: '445566' }, 'POST'),
+    'NOT_FOUND');
+  throwsCode('metode GET ditolak',
+    () => env.sandbox.handleResetPin_({ token: admin.token, id_akun: 'AKN-USER', pin: '445566' }, 'GET'),
+    'METHOD_NOT_ALLOWED');
+  return true;
+});
+
+check('resetPin tidak meninggalkan PIN mentah di log', () => {
+  const env = envWithAdmin();
+  const admin = env.sandbox.handleLogin_({ nip: '9000111122223333', pin: '112233' }, 'POST');
+  env.sandbox.handleResetPin_(
+    { token: admin.token, id_akun: 'AKN-USER', pin: '135791' }, 'POST');
+  if (env.logs.join('\n').indexOf('135791') !== -1) throw new Error('PIN muncul di log');
   return true;
 });
 

@@ -125,6 +125,15 @@ function countBukti(env) {
   return env.sandbox.readObjects_('BuktiAbsensi').length;
 }
 
+/** Mengisi satu absensi pulang (masuk dulu) memakai waktu uji yang diberikan. */
+function submitPulang(env, token) {
+  atTime(env, T.midMasuk);
+  const masuk = submit(env, token);
+  atTime(env, T.openPulang);
+  const pulang = submit(env, token, { id_absensi: nextId(), jenis: 'pulang', gps: null });
+  return { masuk, pulang };
+}
+
 /* ================= TimeRule (murni) ================= */
 
 console.log('== Aturan waktu: primitif murni ==');
@@ -749,17 +758,166 @@ check('foto Drive privat: setSharing defensif dipanggil (bukan publik)', () => {
   if (!file._shared) throw new Error('setSharing defensif tidak dipanggil');
   return true;
 });
-check('struktur folder ABSENSI_KPU/YYYY/MM/Foto_Masuk dibuat', () => {
+check('struktur folder ABSENSI_KPU/YYYY/MM_NamaBulan/DD/Nama_ID dibuat', () => {
   const { env, token } = envAttendance();
   atTime(env, T.midMasuk);
   submit(env, token);
   const row = env.sandbox.readObjects_('Absensi')[0];
   if (String(row.tanggal) !== '2026-10-15') throw new Error('tanggal');
   const bukti = env.sandbox.readObjects_('BuktiAbsensi')[0];
-  if (String(bukti.path).indexOf('ABSENSI_KPU/2026/10/Foto_Masuk/') !== 0) {
-    throw new Error('path ' + bukti.path);
+  const want = 'ABSENSI_KPU/2026/10_Oktober/15/Pegawai_Absensi_PEG-ATT-1/Absen_Masuk.jpg';
+  if (String(bukti.path) !== want) throw new Error('path ' + bukti.path);
+  const file = env.driveRegistry.files[0];
+  if (String(file._name) !== 'Absen_Masuk.jpg') throw new Error('nama file ' + file._name);
+  return true;
+});
+check('folder pegawai berisi ID internal (nama sama tidak tertukar)', () => {
+  const { env, token } = envAttendance();
+  atTime(env, T.midMasuk);
+  submit(env, token);
+  const folder = env.driveRegistry.folders.find((f) => /Pegawai_Absensi_PEG-ATT-1$/.test(f._path));
+  if (!folder) throw new Error('folder pegawai tidak ada');
+  if (folder._path.indexOf('ABSENSI_KPU/2026/10_Oktober/15/') === -1) {
+    throw new Error('path folder ' + folder._path);
   }
   return true;
+});
+
+console.log('== Struktur folder foto absensi (DEC-P29) ==');
+check('nama folder bulan = MM_NamaBulan (Indonesia)', () => {
+  const { env } = envAttendance();
+  eq('Oktober', env.sandbox.monthFolderName_('10'), '10_Oktober');
+  eq('Januari', env.sandbox.monthFolderName_(1), '01_Januari');
+  eq('Desember', env.sandbox.monthFolderName_('12'), '12_Desember');
+  eq('bulan tak valid', env.sandbox.monthFolderName_(13), 'BELUM_DITETAPKAN');
+});
+check('nama folder pegawai = Nama_ID (fungsi murni)', () => {
+  const { env } = envAttendance();
+  eq('nama+id', env.sandbox.pegawaiFolderName_('Andi Saputra', 'PEG-00123'),
+    'Andi_Saputra_PEG-00123');
+  eq('karakter terlarang disanitasi', env.sandbox.pegawaiFolderName_('A/B:C', 'PEG-1'),
+    'A_B_C_PEG-1');
+  eq('nama kosong → TANPA_NAMA', env.sandbox.pegawaiFolderName_('', 'PEG-1'), 'TANPA_NAMA_PEG-1');
+});
+check('check-in menyimpan Absen_Masuk.jpg di folder tanggal', () => {
+  const { env, token } = envAttendance();
+  atTime(env, T.midMasuk);
+  submit(env, token);
+  const bukti = env.sandbox.readObjects_('BuktiAbsensi')[0];
+  eq('path', bukti.path,
+    'ABSENSI_KPU/2026/10_Oktober/15/Pegawai_Absensi_PEG-ATT-1/Absen_Masuk.jpg');
+  eq('nama file', env.driveRegistry.files[0]._name, 'Absen_Masuk.jpg');
+  eq('jenis', env.sandbox.readObjects_('Absensi')[0].jenis, 'masuk');
+});
+check('check-out menyimpan Absen_Pulang.jpg pada folder pegawai yang sama', () => {
+  const { env, token } = envAttendance();
+  submitPulang(env, token);
+  const bukti = env.sandbox.readObjects_('BuktiAbsensi');
+  eq('jumlah bukti', bukti.length, 2);
+  eq('path pulang', bukti[1].path,
+    'ABSENSI_KPU/2026/10_Oktober/15/Pegawai_Absensi_PEG-ATT-1/Absen_Pulang.jpg');
+  const names = env.driveRegistry.files.map((f) => f._name).sort();
+  eq('nama file', names.join(','), 'Absen_Masuk.jpg,Absen_Pulang.jpg');
+});
+check('tanggal berbeda → folder tanggal berbeda', () => {
+  const { env, token } = envAttendance();
+  atTime(env, T.midMasuk);
+  submit(env, token);
+  atTime(env, T.sundayOpen);
+  submit(env, token, { id_absensi: nextId() });
+  const bukti = env.sandbox.readObjects_('BuktiAbsensi');
+  eq('path hari-1', bukti[0].path,
+    'ABSENSI_KPU/2026/10_Oktober/15/Pegawai_Absensi_PEG-ATT-1/Absen_Masuk.jpg');
+  eq('path hari-2 (18 Okt)', bukti[1].path,
+    'ABSENSI_KPU/2026/10_Oktober/18/Pegawai_Absensi_PEG-ATT-1/Absen_Masuk.jpg');
+});
+check('KLIK GANDA: duplikat masuk ditolak, tidak ada file kedua', () => {
+  const { env, token } = envAttendance();
+  atTime(env, T.midMasuk);
+  submit(env, token);
+  let code = null;
+  try { submit(env, token, { id_absensi: nextId() }); } catch (err) { code = err && err.code; }
+  eq('kode', code, 'DUPLICATE');
+  eq('jumlah file', env.driveRegistry.files.length, 1);
+  eq('jumlah bukti', countBukti(env), 1);
+});
+check('RETRY idempoten: id_absensi sama → tidak menambah file/bukti (anti-duplikat)', () => {
+  const { env, token } = envAttendance();
+  atTime(env, T.midMasuk);
+  const id = nextId();
+  const first = submit(env, token, { id_absensi: id });
+  const second = submit(env, token, { id_absensi: id });
+  eq('id sama', second.id_absensi, first.id_absensi);
+  eq('jumlah file', env.driveRegistry.files.length, 1);
+  eq('jumlah bukti', countBukti(env), 1);
+  eq('jumlah absensi', countAbsensi(env), 1);
+});
+check('folder dipakai ulang (tidak dibuat ulang) untuk absensi berikutnya', () => {
+  const { env, token } = envAttendance();
+  submitPulang(env, token);
+  const pegawaiFolders = env.driveRegistry.folders
+    .filter((f) => /Pegawai_Absensi_PEG-ATT-1$/.test(f._path));
+  eq('folder pegawai unik', pegawaiFolders.length, 1);
+  const dayFolders = env.driveRegistry.folders.filter((f) => /\/15$/.test(f._path));
+  eq('folder tanggal unik', dayFolders.length, 1);
+});
+check('KEGAGALAN DRIVE: tidak ada file kosong/baris, respons bukan sukses', () => {
+  const { env, token } = envAttendance();
+  atTime(env, T.midMasuk);
+  const original = env.sandbox.Utilities.newBlob;
+  env.sandbox.Utilities.newBlob = function () { throw new Error('DriveApp gagal (uji)'); };
+  let code = null;
+  try { submit(env, token); } catch (err) { code = err && err.code; }
+  env.sandbox.Utilities.newBlob = original;
+  eq('kode', code, 'ATTENDANCE_NOT_STORED');
+  eq('jumlah file', env.driveRegistry.files.length, 0);
+  eq('jumlah absensi', countAbsensi(env), 0);
+  eq('jumlah bukti', countBukti(env), 0);
+  const logs = env.sandbox.readObjects_('LogAktivitas');
+  if (!logs.find((l) => String(l.aksi) === 'attendance_drive_failed')) {
+    throw new Error('log attendance_drive_failed tidak ada');
+  }
+});
+check('KEGAGALAN SHEETS: baris tak tertulis, file orphan dicatat (bukan sukses)', () => {
+  const { env, token } = envAttendance();
+  atTime(env, T.midMasuk);
+  const original = env.sandbox.appendObject_;
+  env.sandbox.appendObject_ = function (name, obj) {
+    if (name === 'Absensi' || name === 'BuktiAbsensi') {
+      throw new Error('Spreadsheet gagal (uji)');
+    }
+    return original.call(env.sandbox, name, obj);
+  };
+  let code = null;
+  try { submit(env, token); } catch (err) { code = err && err.code; }
+  if (code !== 'ATTENDANCE_STORAGE_PARTIAL' && code !== 'ATTENDANCE_NOT_STORED') {
+    throw new Error('kode: ' + code);
+  }
+  eq('jumlah absensi', countAbsensi(env), 0);
+  const logs = env.sandbox.readObjects_('LogAktivitas');
+  const partial = logs.find((l) => String(l.aksi) === 'attendance_storage_partial');
+  if (!partial) throw new Error('log attendance_storage_partial tidak ada');
+  if (String(partial.detail).indexOf('orphan_drive_file=') === -1) {
+    throw new Error('detail orphan tidak dicatat: ' + partial.detail);
+  }
+});
+check('foto privat: setSharing defensif dipanggil pada struktur baru', () => {
+  const { env, token } = envAttendance();
+  atTime(env, T.midMasuk);
+  submit(env, token);
+  const file = env.driveRegistry.files[0];
+  if (!file._shared) throw new Error('setSharing tidak dipanggil');
+  const photo = env.sandbox.readAttendancePhoto_(String(
+    env.sandbox.readObjects_('BuktiAbsensi')[0].drive_file_id));
+  eq('byte utuh', photo.ukuran, env.driveRegistry.files[0]._bytes.length);
+});
+check('aturan absensi lama tetap berlaku (jam di luar jendela ditolak)', () => {
+  const { env, token } = envAttendance();
+  atTime(env, T.afterMasuk);
+  let code = null;
+  try { submit(env, token); } catch (err) { code = err && err.code; }
+  eq('kode', code, 'TIME_WINDOW');
+  eq('jumlah file', env.driveRegistry.files.length, 0);
 });
 check('PIN/token/foto tidak muncul di log', () => {
   const { env, token } = envAttendance();

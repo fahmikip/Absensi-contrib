@@ -20,6 +20,8 @@ var PIN_KDF_ALGO = 'pbkdf2-sha256';
 var PIN_KDF_DEFAULT_ITERATIONS = 10000; // sementara; wajib benchmark (D2)
 var PIN_KDF_KEY_BYTES = 32;
 var PIN_SALT_BYTES = 16;
+var PIN_DIGITS = 6; // DEC-P22: PIN tepat 6 digit angka
+var PIN_PATTERN = /^[0-9]{6}$/;
 var SESSION_TOKEN_UUIDS = 2; // ~244 bit; lihat keterbatasan CSPRNG
 var DEFAULT_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 var LOCK_MAX_FAILURES = 5;      // D3
@@ -173,6 +175,15 @@ function randomBytes_(n) {
 }
 
 /* ---------------- PIN: create & verify ---------------- */
+
+/**
+ * Validasi format PIN (DEC-P22): tepat 6 digit angka.
+ * @param {*} pin
+ * @return {boolean}
+ */
+function isValidPin_(pin) {
+  return PIN_PATTERN.test(String(pin === null || pin === undefined ? '' : pin));
+}
 
 /**
  * @param {string} pin

@@ -28,7 +28,10 @@ Arsitektur: `Browser/PWA → HTTPS → Google Apps Script → Google Sheets & Go
 - Pembatasan percobaan login dan penundaan/penguncian sementara untuk percobaan berulang.
 - Reset PIN hanya melalui mekanisme admin yang terotorisasi.
 - Peran admin tidak boleh dipercaya dari sisi klien; verifikasi di backend.
-- **BELUM DITETAPKAN:** metode penerbitan PIN awal, proses aktivasi akun, detail pemulihan akun, panjang/format PIN, algoritma hash, ambang & durasi lockout, bootstrap admin pertama → lihat `AMB-01..AMB-06`.
+- **SUDAH DITETAPKAN** (lihat `docs/DECISIONS.md`): penerbitan PIN awal & reset
+  oleh admin, format PIN 6 digit angka (DEC-P22); hash PBKDF2-HMAC-SHA256 (DEC-P10);
+  lockout 5x gagal/15 menit per-akun (DEC-P11); bootstrap admin via `seedAdmin()`
+  (DEC-P12); sesi token di memori klien (DEC-P09).
 
 ## 4. Mode Kerja
 - Pegawai memilih mode saat absensi: **WFO** atau **WFH/WFA**.
@@ -70,7 +73,8 @@ Arsitektur: `Browser/PWA → HTTPS → Google Apps Script → Google Sheets & Go
 - Admin memutuskan menerima/menolak.
 - Sistem harus membedakan: tanggal absensi diajukan, jenis absensi, mode kerja yang diklaim, waktu aktual yang diklaim pegawai, waktu pengajuan diterima server, waktu keputusan admin, identitas admin pemutus, catatan/alasan keputusan, waktu & identitas perubahan data.
 - Persetujuan susulan tidak boleh mengubah waktu pengajuan seolah direkam server pada waktu aktual yang diklaim.
-- **BELUM DITETAPKAN:** batas maksimal tanggal pengajuan susulan → `AMB-11`; bukti wajib → `AMB-12`.
+- **SUDAH DITETAPKAN** (DEC-P23/P24): batas maksimum **3 hari** sebelum hari server
+  (WIB), tanpa tanggal mendatang; bukti wajib **alasan teks + foto JPEG**.
 
 ## 9. Pengelolaan Pegawai
 - Panel admin untuk mengelola data pegawai.
@@ -88,14 +92,19 @@ Arsitektur: `Browser/PWA → HTTPS → Google Apps Script → Google Sheets & Go
 - Google Sheets bukan database transaksional penuh; batasan & mitigasi wajib didokumentasikan.
 
 ## 11. Drive & Privasi
-- Foto disimpan di folder Drive privat, terorganisir tahun/bulan & jenis absensi.
-- Struktur usulan: `ABSENSI_KPU/YYYY/MM/Foto_Masuk/` dan `ABSENSI_KPU/YYYY/MM/Foto_Pulang/` (boleh disesuaikan teknis tanpa mengubah privasi).
+- Foto disimpan di folder Drive privat, terorganisir tahun/bulan/tanggal/pegawai.
+- Struktur final (DEC-P29):
+  `ABSENSI_KPU/YYYY/MM_NamaBulan/DD/NamaPegawai_IDPegawai/Absen_Masuk.jpg` &
+  `Absen_Pulang.jpg`. Nama folder bulan `MM_NamaBulan` (Indonesia) dan bagian
+  pegawai memakai ID internal sebagai kunci (nama saja tidak cukup).
+- Foto susulan tersimpan terpisah di `.../MM/Foto_Susulan/` (bukan catatan
+  absensi reguler, DEC-P24).
 - Dilarang membuat file publik / mengaktifkan "siapa pun dengan tautan".
 - Simpan referensi file untuk pencarian & audit.
 - Dilarang mengirim isi foto/data pribadi ke log yang tidak perlu.
 - Tangani kegagalan simpan Drive & Sheets secara eksplisit.
 - Dilarang menghapus bukti absensi hanya karena akun dinonaktifkan.
-- **BELUM DITETAPKAN:** kebijakan retensi/penghapusan → `AMB-18`.
+- **SUDAH DITETAPKAN** (DEC-P26): simpan permanen — tanpa penghapusan otomatis.
 
 ## 12. PWA & UI
 - Antarmuka profesional, bersih, responsif, desktop & seluler.

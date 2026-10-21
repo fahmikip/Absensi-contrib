@@ -49,6 +49,7 @@ console.log('== Struktur berkas ==');
   'assets/js/auth.js',
   'assets/js/camera.js',
   'assets/js/attendance.js',
+  'assets/js/susulan.js',
   'assets/js/admin.js',
   'assets/js/report.js',
   'assets/js/nav.js',
@@ -65,6 +66,7 @@ console.log('== Struktur berkas ==');
   'gas/Geo.gs',
   'gas/Drive.gs',
   'gas/Attendance.gs',
+  'gas/Susulan.gs',
   'gas/AdminService.gs',
   'gas/ReportService.gs',
   'gas/appsscript.json',
@@ -72,7 +74,7 @@ console.log('== Struktur berkas ==');
 ].forEach((f) => check('ada: ' + f, () => existsSync(abs(f))));
 
 console.log('== Sintaks JavaScript frontend ==');
-['assets/js/config.js', 'assets/js/api.js', 'assets/js/app.js', 'assets/js/auth.js', 'assets/js/admin.js', 'assets/js/report.js', 'assets/js/nav.js', 'service-worker.js'].forEach((f) => {
+['assets/js/config.js', 'assets/js/api.js', 'assets/js/app.js', 'assets/js/auth.js', 'assets/js/admin.js', 'assets/js/report.js', 'assets/js/nav.js', 'assets/js/susulan.js', 'service-worker.js'].forEach((f) => {
   check('sintaks: ' + f, () => {
     execFileSync(process.execPath, ['--check', abs(f)]);
     return true;
@@ -80,7 +82,7 @@ console.log('== Sintaks JavaScript frontend ==');
 });
 
 console.log('== Sintaks Apps Script (.gs) ==');
-['gas/Code.gs', 'gas/Config.gs', 'gas/Auth.gs', 'gas/Repo.gs', 'gas/AuthService.gs', 'gas/AdminService.gs', 'gas/ReportService.gs', 'gas/Bootstrap.gs'].forEach((f) => {
+['gas/Code.gs', 'gas/Config.gs', 'gas/Auth.gs', 'gas/Repo.gs', 'gas/AuthService.gs', 'gas/AdminService.gs', 'gas/ReportService.gs', 'gas/Bootstrap.gs', 'gas/Susulan.gs'].forEach((f) => {
   check('sintaks: ' + f, () => {
     const tmp = join(tmpdir(), 'check-' + f.replace(/[\\/]/g, '_') + '.js');
     copyFileSync(abs(f), tmp);

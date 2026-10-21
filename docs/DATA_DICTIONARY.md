@@ -61,11 +61,17 @@ Legenda: `PK` kunci utama internal · `FK` referensi · `?` belum tersedia/opsio
 |----------------|------|------------|
 | `id_bukti` (PK) | String | ID bukti |
 | `id_absensi` (FK) | String | → Absensi |
-| `drive_file_id` | String | ID file Drive (privat) |
-| `path` | String | Path/struktur folder |
-| `mime` | String | Tipe file |
+| `drive_file_id` | String | ID file Drive (privat) — referensi utama foto |
+| `path` | String | Path/struktur folder (DEC-P29): `ABSENSI_KPU/YYYY/MM_NamaBulan/DD/NamaPegawai_IDPegawai/Absen_Masuk|Absen_Pulang.jpg` |
+| `mime` | String | Tipe file (`image/jpeg`) |
 | `ukuran` | Number | Ukuran (byte) |
 | `dibuat_pada` | DateTime | Metadata |
+
+> Catatan DEC-P29: struktur folder di atas menggantikan usulan lama
+> `YYYY/MM/Foto_Masuk|Foto_Pulang/`. Nama file tetap per jenis; duplikat
+> dicegah oleh prasyarat (satu masuk + satu pulang per pegawai per tanggal),
+> idempotensi `id_absensi`, dan `LockService`. Foto diamankan via
+> `drive_file_id` (bukan nama file).
 
 ## 5. `Pengaturan`
 | Kolom (usulan) | Tipe | Keterangan |
