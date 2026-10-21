@@ -53,11 +53,16 @@
               <input class="form-input" id="pin" name="pin" type="password"
                      inputmode="numeric" autocomplete="current-password" required />
             </div>
+            <label class="form-check">
+              <input type="checkbox" id="remember" name="remember" />
+              <span>Ingat saya (tetap masuk selama 8 jam di perangkat ini)</span>
+            </label>
             <button class="btn btn--primary btn--block" id="login-submit" type="submit">Masuk</button>
             <p class="form-message" id="login-message" role="status" aria-live="polite" hidden></p>
           </form>
           <p class="auth-panel__hint">
-            Sesi hanya tersimpan selama halaman terbuka. Memuat ulang berarti keluar.
+            Sesi tersimpan di perangkat selama 8 jam bila "Ingat saya" dicentang;
+            tanpa centang, memuat ulang halaman berarti keluar.
           </p>
         </div>
       </section>

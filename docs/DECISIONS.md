@@ -58,9 +58,10 @@
 | DEC-P04 | AMB-15/16/17 | Skema data & format waktu | DIJAWAB DEC-P15 (D6/D7) |
 | DEC-P05 | AMB-11/12 | Aturan susulan | DIGANTIKAN DEC-P23/P24 |
 | DEC-P06 | AMB-18 | Retensi data | DIGANTIKAN DEC-P26 |
+| DEC-P30 | AMB-05/D1 | Penyimpanan token sesi persisten ("Ingat saya") | DISETUJUI 2026-10-21 (mengubah DEC-P09) |
 | DEC-P07 | AMB-19 | Laporan & ekspor | DISETUJUI 2026-10-19 |
 | DEC-P08 | AMB-23 | Nilai konfigurasi resource | DISETUJUI 2026-10-19 (nilai di Script Properties; tidak di repo — `backendConfigured:true`) |
-| DEC-P09 | AMB-05 | **D1** penyimpanan token sesi (memori/sessionStorage/localStorage/ubah arsitektur) | DISETUJUI 2026-10-15 |
+| DEC-P09 | AMB-05 | **D1** penyimpanan token sesi (memori/sessionStorage/localStorage/ubah arsitektur) | DIUBAH DEC-P30 (2026-10-21) |
 | DEC-P10 | AMB-03 | **D2** metode penyimpanan & verifikasi PIN (PBKDF2 buatan sendiri / SHA-256+lockout / layanan eksternal) | DISETUJUI 2026-10-15 |
 | DEC-P11 | AMB-04 | **D3** ambang & durasi lockout | DISETUJUI 2026-10-15 |
 | DEC-P12 | AMB-06 | **D4** bootstrap admin pertama | DISETUJUI 2026-10-15 |
@@ -74,9 +75,11 @@ Sumber: jawaban pengguna atas pertanyaan D0–D8 (lihat `docs/PHASE2_AUDIT.md`).
 - Keputusan: Login memakai **NIP/NIPK + PIN** (PIN saja tidak dapat mengidentifikasi akun).
 
 ### DEC-P09 — Penyimpanan token sesi (D1)
-- Tanggal: 2026-10-15; Status: DISETUJUI
+- Tanggal: 2026-10-15; Status: DIUBAH oleh DEC-P30 (2026-10-21)
 - Keputusan: Token sesi disimpan di **memori JS saja** (tanpa localStorage/sessionStorage/cookie).
 - Dampak: memuat ulang halaman = keluar; pengguna harus masuk lagi.
+- Diperbarui DEC-P30: ditambah opsi "Ingat saya" → token juga di `localStorage`
+  (tetap tanpa cookie); tanpa centang tetap memori saja.
 
 ### DEC-P10 — Hash PIN (D2)
 - Tanggal: 2026-10-15; Status: DISETUJUI
@@ -306,3 +309,29 @@ Sumber: jawaban pengguna atas pertanyaan D0–D8 (lihat `docs/PHASE2_AUDIT.md`).
   pegawai per tanggal + idempotensi `id_absensi` + `LockService`.
 - Migrasi: foto lama berstruktur lama TIDAK dipindah/dihapus (DEC-007/DEC-P26);
   struktur baru hanya berlaku untuk penyimpanan baru.
+
+### DEC-P30 — Penyimpanan token sesi persisten ("Ingat saya") (D1 diperbarui)
+- Tanggal: 2026-10-21; Status: DISETUJUI (instruksi pengguna 2026-10-21).
+- Mengubah: DEC-P09/D1 (token HANYA di memori).
+- Keputusan: formulir login menambahkan centang **"Ingat saya"**. Bila
+  dicentang, token sesi **juga** disimpan di `localStorage` (`absensi-kpu.token`)
+  agar pengguna tidak perlu login ulang setiap memuat ulang halaman. Bila tidak
+  dicentang, perilaku tetap seperti sebelumnya (token hanya di memori).
+- Masa berlaku: tetap mengikuti TTL **server 8 jam** — tidak ada perpanjangan
+  maupun refresh token. Setelah kedaluwarsa/dicabut, token ditolak server dan
+  dibersihkan klien; pengguna login kembali.
+- Cookie: **tetap tidak dipakai** — Apps Script tidak dapat menerima `Cookie`
+  maupun mengirim `Set-Cookie`, sehingga `HttpOnly`/`Secure`/`SameSite` tidak
+  tersedia (lihat `docs/SECURITY.md`). ADR: penyimpanan lewat `localStorage`.
+- Risiko/penanganan: token persisten lebih rentan eksfiltrasi XSS (bertahan di
+  perangkat). Mitigasi: token acak kuat, disimpan sebagai hash di server, TTL
+  pendek (8 jam), dapat dicabut (logout/penonaktifan akun), pembersihan otomatis
+  saat server menolak; frontend tidak memakai `innerHTML`.
+- Pembersihan: `clearToken()` menghapus nilai di memori dan `localStorage`;
+  `auth:session-lost`/`session.check` gagal juga membersihkan.
+- Pemulihan saat muat halaman: aplikasi membaca token tersimpan, lalu
+  membuktikan validitasnya lewat `session.check` sebelum menampilkan status
+  "masuk" (tidak mempercayai nilai lokal begitu saja).
+- Penerapan: `assets/js/api.js` (kapsul `localStorage`, `restoreToken`),
+  `assets/js/auth.js` (`restoreSession`, centang "Ingat saya"),
+  `index.html` (`#remember`).

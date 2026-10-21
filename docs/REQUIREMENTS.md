@@ -31,7 +31,9 @@ Arsitektur: `Browser/PWA → HTTPS → Google Apps Script → Google Sheets & Go
 - **SUDAH DITETAPKAN** (lihat `docs/DECISIONS.md`): penerbitan PIN awal & reset
   oleh admin, format PIN 6 digit angka (DEC-P22); hash PBKDF2-HMAC-SHA256 (DEC-P10);
   lockout 5x gagal/15 menit per-akun (DEC-P11); bootstrap admin via `seedAdmin()`
-  (DEC-P12); sesi token di memori klien (DEC-P09).
+  (DEC-P12); sesi token di memori klien, atau di `localStorage` bila "Ingat saya"
+  dicentang — masa berlaku tetap TTL server 8 jam, tanpa cookie (DEC-P09 diperbarui
+  DEC-P30).
 
 ## 4. Mode Kerja
 - Pegawai memilih mode saat absensi: **WFO** atau **WFH/WFA**.

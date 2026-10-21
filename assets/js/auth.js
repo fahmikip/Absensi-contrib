@@ -2,7 +2,9 @@
  * Autentikasi antarmuka — Sistem Absensi KPU Kabupaten Aceh Selatan (PHASE 2).
  *
  * - Login: NIP/NIPK + PIN (keputusan D0).
- * - Sesi hanya di memori: memuat ulang halaman berarti keluar (keputusan D1).
+ * - Sesi di memori; bila "Ingat saya" dicentang, token juga disimpan di
+ *   localStorage agar tidak perlu login ulang tiap muat halaman (DEC-P30,
+ *   mengubah DEC-P09). Cookie tidak mungkin pada stack ini.
  * - Otorisasi sebenarnya ada di backend; UI ini hanya membantu, bukan pengaman.
  */
 (function () {
@@ -69,10 +71,12 @@
 
     var nipEl = el('nip');
     var pinEl = el('pin');
+    var rememberEl = el('remember');
     var submitBtn = el('login-submit');
 
     var nip = nipEl ? nipEl.value.trim() : '';
     var pin = pinEl ? pinEl.value : '';
+    var remember = Boolean(rememberEl && rememberEl.checked);
     // Jangan simpan PIN: kosongkan kolom segera setelah dibaca.
     if (pinEl) {
       pinEl.value = '';
@@ -96,7 +100,7 @@
     api.call('login', { nip: nip, pin: pin, agen: navigator.userAgent })
       .then(function (res) {
         if (res && res.ok && res.token) {
-          api.setToken(res.token);
+          api.setToken(res.token, remember);
           renderLoggedIn({ nama: res.nama, peran: res.peran });
         } else {
           setMessage('login-message',
@@ -122,6 +126,33 @@
     });
   }
 
+  /**
+   * Memulihkan sesi dari token persisten (DEC-P30). Hanya melihat apakah ada
+   * token tersimpan, lalu membuktikan validitasnya ke server lewat
+   * `session.check`. Bila gagal/kedaluwarsa, token lokal dibersihkan.
+   */
+  function restoreSession() {
+    if (!api.hasStoredToken()) {
+      renderLoggedOut();
+      return;
+    }
+    api.restoreToken();
+    api.call('session.check', {})
+      .then(function (res) {
+        if (res && res.ok) {
+          renderLoggedIn({ nama: res.nama, peran: res.peran });
+        } else {
+          api.clearToken();
+          renderLoggedOut();
+        }
+      })
+      .catch(function () {
+        // Tidak dapat menghubungi server: jangan klaim sesi valid.
+        api.clearToken();
+        renderLoggedOut();
+      });
+  }
+
   function init() {
     if (!api) {
       return;
@@ -140,7 +171,7 @@
       api.clearToken();
       renderLoggedOut();
     });
-    renderLoggedOut();
+    restoreSession();
   }
 
   if (document.readyState === 'loading') {

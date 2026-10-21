@@ -203,6 +203,25 @@ check('auth.js: menangani auth:session-lost (bersihkan token & sesi lokal)', () 
   if (!/api\.clearToken\(\)/.test(src)) throw new Error('panggilan clearToken tidak ada');
   return true;
 });
+check('auth.js: memulihkan sesi persisten & membuktikannya lewat session.check', () => {
+  const src = readFileSync(abs('assets/js/auth.js'), 'utf8');
+  if (!/hasStoredToken\(\)/.test(src)) throw new Error('hasStoredToken tidak dipakai');
+  if (!/restoreToken\(\)/.test(src)) throw new Error('restoreToken tidak dipanggil');
+  if (!/call\('session\.check'/.test(src)) throw new Error('session.check tidak dipanggil saat memulihkan sesi');
+  return true;
+});
+check('api.js: token persisten hanya via localStorage terenkapsulasi (bukan cookie)', () => {
+  const src = readFileSync(abs('assets/js/api.js'), 'utf8');
+  if (!/localStorage/.test(src)) throw new Error('localStorage tidak dipakai');
+  if (/\bdocument\.cookie\b/.test(src)) throw new Error('cookie tidak boleh dipakai (tak didukung Apps Script)');
+  if (!/function restoreToken\(\)/.test(src)) throw new Error('restoreToken tidak ada');
+  return true;
+});
+check('index.html: ada centang "Ingat saya" (id=remember) di formulir login', () => {
+  const src = readFileSync(abs('index.html'), 'utf8');
+  if (!/id="remember"/.test(src)) throw new Error('input #remember tidak ada');
+  return true;
+});
 check('versi config.js == CACHE_VERSION service-worker.js', () => {
   const cfg = readFileSync(abs('assets/js/config.js'), 'utf8');
   const sw = readFileSync(abs('service-worker.js'), 'utf8');

@@ -34,7 +34,7 @@ Lihat `docs/PHASE2_AUDIT.md` §2 untuk sumber dan implikasi.
 | T-06 | Akses foto via tautan publik | Foto privat bocor | Drive privat; dilarang anyone-with-link; akses via backend ber-otorisasi (AMB-20/DEC-P25) | Sebagian (tanggap admin TANPA `drive_file_id`/URL; endpoint foto blob ber-token; runtime belum) |
 | T-07 | Penyalahgunaan endpoint admin | Manipulasi data | Cek peran admin di backend setiap request (jangan percaya klien) | Sebagian (**PHASE 4: 11 endpoint `requireAdmin_`, diuji lokal 171 cek LULUS; runtime & browser belum**) |
 | T-08 | Permintaan ganda / race condition | Duplikasi absensi | `LockService` + kunci unik (pegawai+tanggal+jenis); idempotency; nama file tetap | Sebagian (tulisan absensi & admin dibungkus lock di kode; keputusan susulan ganda → CONFLICT; uji runtime belum) |
-| T-09 | Penyalahgunaan token/sesi | Akses tidak sah | Token acak kuat, disimpan sebagai hash, masa berlaku, revoke saat logout | Sebagian (kode; token di memori D1) |
+| T-09 | Penyalahgunaan token/sesi | Akses tidak sah | Token acak kuat, disimpan sebagai hash, masa berlaku, revoke saat logout | Sebagian (kode; token di memori — atau `localStorage` bila "Ingat saya" DEC-P30) |
 | T-10 | Kebocoran konfigurasi/log | Eksposur resource | Secrets via Script Properties; log tanpa data pribadi/PIN/token | Sebagian (kode + uji lokal LULUS; log admin diuji tanpa token/PIN) |
 | T-11 | Perubahan/penghapusan tanpa jejak | Tidak dapat diaudit | `LogAktivitas` append-only dengan aktor & waktu | Sebagian (login/logout/akun + **aksi pegawai & keputusan susulan (PHASE 4)** dicat; kode) |
 | T-12 | Kegagalan parsial Drive↔Sheets | Data tak konsisten | Urutan tulis & kompensasi; tandai status "perlu ditindaklanjuti"; jangan klaim berhasil | Sebagian (absensi: gagal Drive → tidak menulis apa pun; gagal Sheets → bukti dikompensasi, file orphan dicatat, respons `ATTENDANCE_STORAGE_PARTIAL`; TIDAK ada transaksi atomik) |
@@ -71,7 +71,9 @@ Kontrol yang sekarang ada di kode (`gas/Auth.gs`, `gas/AuthService.gs`, `gas/Rep
 - **PIN**: disimpan sebagai PBKDF2-HMAC-SHA256 + salt unik per akun; diversifikasi
   iterasi disimpan per baris (`pin_iterasi`). Diuji vs vektor RFC 7914 §11.
 - **Token sesi**: acak (~244 bit dari UUID v4), disimpan sebagai SHA-256 base64;
-  token mentah tidak disimpan/ dilog. Disimpan klien HANYA di memori (D1).
+  token mentah tidak disimpan/ dilog. Disimpan klien di memori; **atau di
+  `localStorage` bila pengguna mencentang "Ingat saya"** (DEC-P30, mengubah
+  D1/DEC-P09). Cookie tetap tidak dipakai (tidak didukung stack ini).
 - **Lockout**: 5 gagal → kunci 15 menit (D3), per-akun (tidak ada IP andal).
 - **Pesan seragam**: login gagal selalu `AUTH_FAILED` dengan pesan identik
   (akun tak ada / PIN salah / terkunci tidak dibedakan); verifikasi "dummy"

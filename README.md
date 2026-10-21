@@ -7,7 +7,7 @@ Aplikasi absensi pegawai berbasis Progressive Web App (PWA).
 - **Database:** Google Sheets.
 - **Penyimpanan foto:** Google Drive privat.
 - **Zona waktu:** `Asia/Jakarta`.
-- **Versi aplikasi:** `0.6.2` (sumber: `assets/js/config.js`).
+- **Versi aplikasi:** `0.6.5` (sumber: `assets/js/config.js`).
 
 ## Status Proyek
 **PHASE 6 — QA rilis: selesai (lokal); BELUM SIAP RILIS.** Audit kode & keamanan
@@ -17,7 +17,7 @@ nyata: backend Apps Script ter-deploy & health check `ok:true` dengan
 `backendConfigured:true` (`SPREADSHEET_ID`/`DRIVE_FOLDER_ID` terisi — DEC-P08/DEC-P20)
 dan **`officeLocationConfigured:true`** (koordinat kantor tersimpan — AMB-07/DEC-P20);
 **GitHub Pages sudah aktif** — frontend live di `https://kipasel.github.io/Absensi/`
-(HTTP 200, versi 0.6.2). Rilis terblokir **uji integrasi/browser nyata**
+(HTTP 200, versi 0.6.5). Rilis terblokir **uji integrasi/browser nyata**
 (kamera/GPS/PWA/SW, login & absensi akun nyata). Lihat `docs/PROGRESS.md`
 & `docs/DEPLOYMENT.md`.
 
@@ -107,6 +107,7 @@ Script Properties (DEC-P08).
 ## Dokumentasi
 | Dokumen | Isi |
 |---------|-----|
+| `docs/FUNGSI_FITUR.md` | **Catatan fungsi aplikasi & daftar fitur** |
 | `docs/REQUIREMENTS.md` | Persyaratan yang disetujui |
 | `docs/AMBIGUITIES.md` | Hal-hal yang belum ditetapkan |
 | `docs/DECISIONS.md` | Catatan keputusan |

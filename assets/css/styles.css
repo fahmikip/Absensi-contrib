@@ -549,6 +549,22 @@ textarea.form-input {
   font-size: 0.85rem;
 }
 
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.form-check input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--brand);
+  flex: none;
+}
+
 .form-message--error { color: var(--offline); }
 .form-message--info { color: var(--text-muted); }
 
