@@ -250,7 +250,7 @@
     var map = {
       UNAUTHORIZED: 'Sesi tidak valid atau kedaluwarsa. Silakan masuk ulang.',
       TIME_WINDOW: 'Di luar jendela jam absensi reguler.',
-      DUPLICATE: 'Absensi sudah tercatat sebelumnya.',
+      DUPLICATE: 'Absensi sudah tercatat untuk jenis ini pada tanggal tersebut.',
       PRECONDITION: 'Absensi pulang memerlukan absensi masuk yang tercatat.',
       OFFICE_NOT_CONFIGURED: 'Validasi lokasi kantor belum dikonfigurasi.',
       ATTENDANCE_STORAGE_PARTIAL: 'Penyimpanan gagal sebagian. Absensi BELUM tercatat; silakan coba lagi.',
@@ -318,6 +318,13 @@
     }
     if (code === 'ATTENDANCE_STORAGE_PARTIAL') {
       setStatus(mapErrorToMessage(res), 'error');
+      return;
+    }
+    if (code === 'DUPLICATE') {
+      var dupMsg = (res && res.message)
+        ? res.message
+        : 'Absensi sudah tercatat untuk jenis ini pada tanggal tersebut.';
+      setStatus('Sudah pernah absen — ' + dupMsg + ' Periksa jenis (masuk/pulang) atau kembali ke menu Beranda.', 'info');
       return;
     }
     setStatus(mapErrorToMessage(res), 'error');
