@@ -600,3 +600,11 @@ Pengujian lokal (Node + stub):
 - Deployment: jalankan `initializeSheets()` untuk menambahkan header baru pada
   spreadsheet aktif, deploy versi Apps Script baru, lalu terbitkan frontend.
   Belum ada perubahan yang dideploy.
+
+## Pasca-PHASE 6 — Pembaruan URL Web App (2026-10-24)
+
+Pengguna memberikan URL Web App baru (DEC-P21 diperbarui):
+`https://script.google.com/macros/s/AKfycbzPrzom2yQUH2G0STiVb1o0P5axU03yadiUnwmmyUIy-tjR3TAr4Q_0irNRcvbr271c/exec`.
+- `assets/js/config.js` — `API_BASE_URL` diperbarui.
+- Versi frontend/cache dinaikkan menjadi `0.6.7` agar service worker mengambil konfigurasi baru.
+- Status endpoint dan deployment belum diverifikasi.
